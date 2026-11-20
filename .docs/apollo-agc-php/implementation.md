@@ -355,7 +355,7 @@ Two reviewers ran in one round and both returned `pass` with no blocking finding
 
 ### Fixes after the gate
 
-Both Medium findings and the four confirmed Low findings are fixed. Open: the Low from slice 1 (every request creates a session file, and there is no rate limit).
+Both Medium findings and the four confirmed Low findings are fixed. The Low from slice 1 (every request creates a session file, and there is no rate limit) is fixed as well.
 
 - `src/Guidance/Luminary/LandingGuidance.php`: the velocity loop of P65 and P66 clamps the vertical thrust at zero, so a large down request on the ROD switch gives no vertical thrust instead of thrust towards the ground. `RateOfDescent` also has a floor on the desired rate: clicks down stop at 20 ft/s (`LandingTargets::ROD_MAX_DESCENT_RATE`, a chosen value that Luminary does not have), or at the rate P66 started in when that descent was faster. `LandingGuidanceTest::testALargeDownRequestOnTheRodSwitchNeverPointsTheEngineAtTheGround` fails without the clamp (pitch −1.85 rad) and passes with it.
 - `public/assets/dsky.js`: one `click` listener on `document` blurs every button after a pointer click; it replaces the blur each DSKY key had. Checked in Chrome: after a mouse click on the 2× speed button, `V05N09` followed by Enter on the keyboard reached the DSKY and the log showed `V05N09 ENTR`.
@@ -363,7 +363,9 @@ Both Medium findings and the four confirmed Low findings are fixed. Open: the Lo
 - PRO at TIG: `LandingChapter` logs "Late ignition" only for a PRO after TIG (10 s). The landing site still lies a fixed distance ahead of the ignition point, so it moves with every PRO after TIG-5 s, as before.
 - Errors outside the controller: `public/api.php` has `session_start` and `json_encode` inside one `try`, with the fixed body `{"error":"Internal error"}` on a failure. `SessionStore` serializes the simulation itself, so the session holds only strings; a simulation it can no longer read is dropped and the tab gets a 409 until it starts again.
 - Two tabs: the page makes up a 16-character hex id per page load and sends it as `tab` with every request (rule 6 of `TickRequest`). `SessionStore` keeps one simulation per tab, at most 4 per session, and drops the tab used longest ago. Checked with curl on one session cookie: a start in a second tab left the first tab's landing running.
-- After the fixes: 369 tests pass, PHPStan reports no errors. The page itself was not checked in a browser after the Low fixes: the Chrome profile of the MCP was held by another session.
+- Session files: `LazySessionStore` starts the PHP session only when the controller reads or saves a simulation. A refused request and a tick without a session cookie leave no session file; a session opened for an unknown cookie is destroyed when it holds nothing. A start still creates a session.
+- Rate limit: `RateLimiter` counts per client address (`REMOTE_ADDR`, which on production is the visitor's address) in windows of one minute, in one small file per address under the session folder. `ApiController` allows 3000 requests and 30 starts per minute and answers 429 with `Retry-After: 60` beyond that. Both limits are chosen values. Checked over HTTP on the local server: the 31st start in a minute got 429.
+- After the fixes: 376 tests pass, PHPStan reports no errors. The page itself was not checked in a browser after the Low fixes: the Chrome profile of the MCP was held by another session.
 
 ## Deviations from the plan
 
