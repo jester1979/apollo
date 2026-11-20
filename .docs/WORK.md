@@ -6,4 +6,4 @@ One row per `.docs/<key-or-slug>/` work folder: Jira tickets and radish plans. S
 
 | Item | Type | Status | Summary |
 |------|------|--------|---------|
-| [apollo-agc-php](apollo-agc-php/) | brief | planned | Apollo 11 AGC (Comanche055/Luminary099) als PHP 8.3-port met DSKY, zes hoofdstukken en Canvas-visualisatie |
+| [apollo-agc-php](apollo-agc-php/) | brief | implemented | Apollo 11 AGC (Comanche055/Luminary099) als PHP 8.3-port met DSKY, zes hoofdstukken en Canvas-visualisatie |

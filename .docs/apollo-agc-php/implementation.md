@@ -314,3 +314,79 @@ Verified by two builders. `vendor/bin/phpunit` passed with 339 tests and 51669 a
 - `tests/Chapter/InterludeTest.php`: the 5 titles and next chapters, no `next` for Entry or a non-success, N65 as the mission clock in all six chapters
 - `tests/Simulation/SimulationTest.php`: the response key list includes `next`
 - `README.md`: source and licences, install and start, page controls, keys, the six chapters, tests and limits
+
+## Verification
+
+The delivery reviewer ran steps 1 to 11 of the plan's Verification section. It installed a clean copy of the tracked tree (`git archive HEAD` into a temp folder, `composer install`, `php -S` on port 8123) and started all six chapters there through `/api.php`. It then played the chapters in Chrome on the project's server with clicks and key presses only. The test baseline held 0 tests, so the "Before" column is empty for every row.
+
+| Requirement / check | Before | After |
+| ------------------- | ------ | ----- |
+| 1. Install, start, choose "Landing", scenario off, start | no project | `composer install` succeeded in a clean copy; the Landing started from the chooser four times |
+| 2. PRO on flashing V99: ignition, flame, `QUADGUID` in the code panel | n/a | ignition at 10% throttle, the flame grows with the throttle, `QUADGUID` linked to line 546 about 26 s after ignition |
+| 3. `V16N68 ENTR` refreshes every second; KEY REL brings V06N63 back | n/a | R1 changed on each poll; KEY REL brought V06N63 back; the log showed both |
+| 4. ArrowDown in P64 gives PROG 66 and V06N60, 1 ft/s per click; soft landing gives CONTACT LIGHT and `success` | n/a | PROG 66, each press moved the wanted rate by 1.0 ft/s; a manual landing ended in `success` with CONTACT LIGHT (a first attempt ran out of fuel at 179 m) |
+| 5. Scenario on: PROG lights, V05N09 shows 01202 or 01201, boxes fill, RESTART rises, RSET puts PROG out, the landing continues | n/a | alarm 1201 at t=54 s, V05N09 showed `01201`, RESTART went from 1 to 16, RSET put PROG out, the landing succeeded; 1202 did not occur in the browser |
+| 6. "Next chapter" after the landing: "On the surface", then the ascent with V06N76 | n/a | seen in the browser |
+| 7. Launch, LOI, TEI and Entry flown at 10× to `success` | n/a | Launch 185 km perigee, LOI 100 × 256 km, TEI escape trajectory, Entry parachutes at 7.0 km with 9.3 g; all `success` |
+| 8. Every `api.php` request is a JSON POST, one at a time; clean console; CSP on `/` | n/a | CSP on `/` is the §4 string; the builders measured a peak of 1 concurrent request and a clean console in slices 1 and 13 |
+| 9. `curl` tick with key `X` gives 400 or 409 with only `{"error":…}` | n/a | 400 `{"error":"Invalid keys"}` |
+| 10. `vendor/bin/phpunit` passes; `vendor/bin/phpstan analyse` gives 0 errors | no test runner | 354 tests, 52445 assertions, OK; PHPStan level 8, no errors |
+| 11. The `@see` grep and the `innerHTML` grep print nothing | n/a | both print nothing |
+| 12. After the commit: push to `jester1979/apollo`, clone into an empty folder, repeat step 1 from the clone | n/a | after the commit: for a person |
+
+## Delivery gate
+
+Two reviewers ran in one round and both returned `pass` with no blocking finding: `radish-delivery-reviewer` and `radish-adversarial-reviewer`. The delivery reviewer marked 37 of 38 criteria `met`. One came back `unverifiable`: slice 1's "the chapter ends with `outcome: "crashed"`" can no longer be reached through the page, because since slice 4 the engine stays off without PRO and the LM then stays in orbit. A crash is covered by `LandingGuidanceTest` and `LandingChapterTest`.
+
+- Level: `heavy` plus `visual`. Signals: the slices reported secure-coding-baseline checks on request input, a new entry point (`public/api.php`) and session handling; stylesheets are among the changed paths. No stack reviewer exists for plain PHP (`radish-wp-reviewer` is for WordPress, `laravel-simplifier` is not installed), so the adversarial reviewer stood in for it and covered quality and security.
+- Visual: unverifiable, because the project is greenfield and has no baseline screenshots. Layout seen at 1440 px: canvas left, DSKY right, code panel and log below, in all six chapters. At 1440 px the Entry HUD text overlaps the "ENTRY INTERFACE" line, and that label is partly hidden behind the bank dial. At 1024 px (Launch) nothing overlapped or was clipped.
+- Reachable: met. From a clean copy, `composer install` and `php -S` served `/` and started all six chapters. In Chrome every chapter was chosen and played through the page alone, and Landing → Ascent → TEI → Entry was walked with "Next chapter" to "Mission complete".
+- Security: every slice reported the trust-boundary and output checks; slices 1, 7 and 12 also reported the entry-point check. No slice left a Critical or High open. The adversarial reviewer found no Critical or High. It swept 59 500 DSKY cases (every verb the port knows against nouns 00 to 99 and V37 to programs 00 to 99, in every chapter) and about 200 fuzz runs with a serialize round trip after every tick, without an exception or a NaN in a response. Paths outside `public/` returned 404.
+- Regressions: not verifiable. The baseline held no tests, so nothing existed to regress against. No test fails now.
+- Not blocking:
+  - Medium, confirmed: in P66 a large down request on the ROD switch makes the descent engine thrust downward (pitch −92°). `src/Guidance/Luminary/LandingGuidance.php:143` does not clamp the vertical thrust at zero, and `src/Guidance/Luminary/RateOfDescent.php:43` has no floor on the desired rate.
+  - Medium: after a mouse click on a speed button the keyboard Enter does not reach the DSKY as ENTR (`public/assets/dsky.js:165`). The adversarial reviewer could not drive a browser; the delivery reviewer lost one ENTR this way in Chrome.
+  - Low, confirmed: a `V37` to P00 sent through the API after an outcome turns `success` into `missed` (`src/Chapter/Landing/LandingChapter.php:232`; the launch and P40 chapters have the same path). The page stops ticking at an outcome, so only a direct API call reaches it.
+  - Low, confirmed: a PRO at TIG is logged as a late ignition and moves the landing site 8.4 km (`src/Chapter/Landing/LandingChapter.php:259`).
+  - Low, confirmed: `session_start` and the response `json_encode` run outside the controller's catch (`public/api.php:14`, `:31`), so a session written by an older code version can give a 500 without the fixed JSON body.
+  - Low, confirmed: two tabs in one browser share one simulation; a start in one tab takes over the other (`src/Http/ApiController.php:36`).
+  - Low, from slice 1: every request to `/api.php` creates a session file, and there is no rate limit.
+- Notes from the delivery reviewer: during its run another actor drove the same Chrome (a page reloaded and keys arrived that it did not send); its results come from its own isolated page. A manual P66 landing is tight on fuel and the README does not warn the player. In the launch the dropped S-IC was not clearly visible in the one frame it looked at; the builder of slice 8 saw both separations in screenshots.
+
+## Deviations from the plan
+
+- The setup differs from the plan's Current state: the working directory had no git repo. On the user's choice the build ran `git init -b main`, added `origin` (`git@github.com:jester1979/apollo.git`, nothing pushed), made one empty root commit on `main` and worked on `radish-build/apollo-agc-php`. There is no `Base:` line because `origin` has no branch.
+- Browser verification was blocked three times (slices 1, 2 and 12) because another Claude session held the profile of the chrome-devtools MCP. Each time the user closed that Chrome and a second builder ran only the browser check.
+- Start state and vehicle (slices 1, 2, 6): slice 1 used a placeholder speed of 1000 m/s so the unpowered LM would fall, and slice 2 restored 1690 m/s. Slice 6 lowered the LM dry mass from 7000 to 6500 kg, because a hands-off landing otherwise ended with an empty tank or 0.9% fuel.
+- Ignition in the landing (slices 2, 4, fix 1): TIG is 10 s after the start and V99N63 flashes from t=5 s. A PRO ignites at once. The landing site moves with a late ignition, and without PRO the chapter ends `missed` after 300 s. The plan did not say what happens without PRO.
+- Pad-loaded and chosen values (slices 2, 6, 7, 8, 9, 10, 11, 12: 8×): braking and approach targets, the P63 to P64 switch on a TTF threshold, the time constants, the job costs (88% load without the scenario instead of about 85%), the Saturn V stage data and pitch table, the LOI and TEI burns, the ascent injection altitude and the entry vehicle are values the builders chose. The plan's Assumptions assign these choices to the build.
+- Displays that follow the source instead of the plan's wording (slices 9, 10, 12: 3×): the entry shows V06N74 in P64, and V06N66 then V16N67 in P67; the ascent shows V06N74 during the countdown and V99N74; N25 shows `+00203` with a sign.
+- Entry guidance (slice 12): P64 holds a 60° bank instead of full lift up, because banks of 0 to 40° skip out of the atmosphere with L/D 0.3 at −6.5°.
+- Clock before the first PRO (slices 9, 10, 11: 3×): LOI, TEI and the ascent keep their clock and vehicle frozen until the first PRO, so that PRO may come at any time. This was a requirement the orchestrator added to those briefs after the late-PRO finding in the landing.
+- Log (slice 5): every key press writes its own line, and `V16N68 ENTR` logs "monitor noun 68, refreshed every second" instead of naming the three components.
+- `@see` lines (slice 5): `Agc.php`, `Computer.php` and `Key.php` are models, not ports. They cite the erasables, verb-list headings and key-code table they model, so the plan's grep prints nothing.
+- Physics (slices 8, 12): `Vehicle` has `dragArea` (Cd·A) instead of the plan's `ballisticCoefficient`, and `Body` has `rotationRate()` so the air turns with the Earth.
+- Structure (slices 1, 11, 12, 13): `ChapterNotAvailable` and its 501 response existed from slice 1 to slice 11 and were removed in slice 12. LOI and TEI share `P40BurnChapter`. The page asks for `/assets/favicon.svg`. Helper classes outside the plan's file table are listed in the slices above.
+- Fix 1 is a commit outside the slice list: the builder of slice 7 found that a late PRO crashed the landing, and the orchestrator had it fixed before slice 9 without asking the user first.
+- In browser runs with the scenario only alarm 1201 occurred. 1202 is covered by `ExecutiveTest`.
+
+## Out of scope (flag, don't address here)
+
+From the plan:
+
+- An AGC emulator that runs the original assembly.
+- The ABORT and ABORT STAGE buttons, and the hand controller for attitude.
+- Hosting, deploy and a Docker image.
+- A mobile layout under 1024 px.
+- Landing-point redesignation in P64 (`REDESIG`).
+- The rendezvous after the ascent (P20, P32 to P35).
+- The other verbs and nouns of both computers.
+- P61 and P62 of the entry.
+- Monitoring of the TLI burn.
+
+Noticed during the build:
+
+- The untracked `.idea/` folder is not in `.gitignore`.
+- A `php -S 127.0.0.1:8000 -t public` process (PID 9651) was already running and was reused by every builder and reviewer; nobody in this build started or stopped it.
+- The six findings on the "Not blocking" line of the delivery gate.
+- The README does not say that a manual P66 landing is tight on fuel.
