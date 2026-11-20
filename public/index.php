@@ -17,7 +17,7 @@ header('Content-Type: text/html; charset=utf-8');
 <body>
     <header class="page-header">
         <h1>Apollo AGC in PHP</h1>
-        <p>Chapter: Landing. The lunar module starts powered descent at PDI altitude and brakes with its descent engine.</p>
+        <p>Chapter: Landing. The lunar module starts powered descent at PDI altitude, brakes with its descent engine and lands by itself. From P64 the arrow keys are the ROD switch: arrow up gives less descent rate, arrow down more, 1 ft/s per press.</p>
     </header>
     <main>
         <div class="controls">

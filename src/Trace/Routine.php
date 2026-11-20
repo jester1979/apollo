@@ -16,6 +16,12 @@ enum Routine
     case QuadGuid;     // Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc:546
     case RootPsrs;     // Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc:1272
     case StartP64;     // Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc:260
+    case P65Start;     // Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc:252
+    case P65Vert;      // Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc:907
+    case StartP66;     // Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc:143
+    case P66Vert;      // Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc:919
+    case RodComp;      // Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc:948
+    case Throttle;     // Luminary099/THROTTLE_CONTROL_ROUTINES.agc:37
     case BurnBaby;     // Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc:159
     case V99Recyc;     // Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc:770
     case P63Zoom;      // Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc:564
@@ -43,6 +49,12 @@ enum Routine
             self::QuadGuid => 'QUADGUID',
             self::RootPsrs => 'ROOTPSRS',
             self::StartP64 => 'STARTP64',
+            self::P65Start => 'P65START',
+            self::P65Vert => 'P65VERT',
+            self::StartP66 => 'STARTP66',
+            self::P66Vert => 'P66VERT',
+            self::RodComp => 'RODCOMP',
+            self::Throttle => 'THROTTLE',
             self::BurnBaby => 'BURNBABY',
             self::V99Recyc => 'V99RECYC',
             self::P63Zoom => 'P63ZOOM',
@@ -67,7 +79,9 @@ enum Routine
     {
         return match ($this) {
             self::P63Lm => 'Luminary099/THE_LUNAR_LANDING.agc',
-            self::QuadGuid, self::RootPsrs, self::StartP64 => 'Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc',
+            self::QuadGuid, self::RootPsrs, self::StartP64, self::P65Start, self::P65Vert, self::StartP66,
+            self::P66Vert, self::RodComp => 'Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc',
+            self::Throttle => 'Luminary099/THROTTLE_CONTROL_ROUTINES.agc',
             self::BurnBaby, self::V99Recyc, self::P63Zoom => 'Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc',
             self::Num, self::Verb, self::Noun, self::Clear, self::Enter, self::VerbFan, self::CharAlrm,
             self::ProcKey, self::VbRelDsp, self::VbTstLts, self::ErrorReset => 'Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc',
@@ -83,6 +97,12 @@ enum Routine
             self::QuadGuid => 546,
             self::RootPsrs => 1272,
             self::StartP64 => 260,
+            self::P65Start => 252,
+            self::P65Vert => 907,
+            self::StartP66 => 143,
+            self::P66Vert => 919,
+            self::RodComp => 948,
+            self::Throttle => 37,
             self::BurnBaby => 159,
             self::V99Recyc => 770,
             self::P63Zoom => 564,

@@ -33,7 +33,7 @@ final class StartStates
     {
         return new Vehicle(
             mass: 15200.0,
-            dryMass: 7000.0,
+            dryMass: 6500.0,
             maxThrust: 45040.0,
             isp: 311.0,
             throttle: 0.0,

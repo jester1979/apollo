@@ -16,8 +16,13 @@ const ctx = canvas.getContext('2d');
 // The most DSKY keys one tick may carry (TickRequest accepts 32).
 const MAX_KEYS_PER_TICK = 32;
 
+// The most ROD clicks one tick may carry (TickRequest accepts -10..10).
+const MAX_ROD_PER_TICK = 10;
+
 // Keys pressed since the last tick; the next tick takes them along.
 const pendingKeys = [];
+// ROD clicks since the last tick: arrow up is +1 (less descent rate), arrow down -1 (more).
+let pendingRod = 0;
 let running = false;
 
 const dsky = createDsky(document.getElementById('dsky'), (name) => {
@@ -30,6 +35,21 @@ dsky.render({
 });
 
 const codePanel = createCodePanel(document.getElementById('codepanel'));
+
+document.addEventListener('keydown', (event) => {
+    if (!running || event.repeat || event.ctrlKey || event.metaKey || event.altKey) {
+        return;
+    }
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
+        return;
+    }
+    if (event.target?.closest('input, textarea, select')) {
+        return;
+    }
+    event.preventDefault();
+    const click = event.key === 'ArrowUp' ? 1 : -1;
+    pendingRod = Math.min(Math.max(pendingRod + click, -MAX_ROD_PER_TICK), MAX_ROD_PER_TICK);
+});
 
 let runId = 0;
 
@@ -76,6 +96,7 @@ async function run() {
     const myRun = ++runId;
     startButton.disabled = true;
     pendingKeys.length = 0;
+    pendingRod = 0;
     running = true;
     dsky.setEnabled(true);
     outcomeLine.textContent = '';
@@ -90,10 +111,12 @@ async function run() {
         // One tick in flight at a time: await the answer, render, then wait.
         while (state.outcome === null && myRun === runId) {
             await delay(TICK_INTERVAL_MS);
+            const rod = pendingRod;
+            pendingRod = 0;
             state = await post({
                 action: 'tick',
                 keys: pendingKeys.splice(0, MAX_KEYS_PER_TICK),
-                rod: 0,
+                rod,
                 speed: 1,
             });
             show(state);

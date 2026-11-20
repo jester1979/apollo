@@ -9,8 +9,10 @@ use Apollo\Physics\StateVector;
 use Apollo\Scenario\LandingTargets;
 
 /**
- * Landing guidance of the braking phase (P63): the quadratic guidance equation QUADGUID with the
- * time to go solved by the Newton root finder ROOTPSRS. One call to pass() is one 2 s guidance pass.
+ * Landing guidance of the braking phase (P63) and the approach phase (P64): the quadratic guidance
+ * equation QUADGUID with the time to go solved by the Newton root finder ROOTPSRS. One call to pass()
+ * is one 2 s guidance pass; the targets decide the phase. The vertical phases P65 and P66 use
+ * velocityPass().
  *
  * Per axis, with TTF negative as in the AGC:
  *   ACG = ADG + 6 (VDG + VG) / TTF + 12 (RDG - RG) / TTF^2
@@ -20,6 +22,7 @@ use Apollo\Scenario\LandingTargets;
  *
  * @see Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc QUADGUID
  * @see Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc ROOTPSRS
+ * @see Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc P65VERT
  */
 final class LandingGuidance
 {
@@ -86,7 +89,47 @@ final class LandingGuidance
             + 6.0 * ($t->velocityHorizontal + $site['vh']) / $ttf
             + 12.0 * ($t->positionHorizontal - $site['rh']) / ($ttf * $ttf);
 
-        // The thrust has to cancel gravity as well.
+        [$pitch, $thrustFraction] = $this->thrust($state, $site, $acgV, $acgH, $mass, $maxThrust);
+
+        return new GuidanceCommand(
+            ttf: $ttf,
+            iterations: $iterations,
+            converged: $converged,
+            brakingComplete: $brakingComplete,
+            pitch: $pitch,
+            thrustFraction: $thrustFraction,
+        );
+    }
+
+    /**
+     * P65VERT and, through RateOfDescent, P66VERT: the velocity loop of the vertical phases. The guidance
+     * acceleration is ACG = (V2FG - VGU) / TAUVERT on both axes, with the horizontal part of V2FG zero,
+     * so the horizontal speed is steered to zero while the vertical speed settles at $verticalSpeed.
+     *
+     * @param float $verticalSpeed wanted vertical speed in m/s (negative: down)
+     * @param float $tau time constant of the loop in seconds
+     * @see Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc P65VERT
+     * @see Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc P66VERT
+     */
+    public function velocityPass(StateVector $state, float $mass, float $maxThrust, float $verticalSpeed, float $tau): GuidanceCommand
+    {
+        $site = $this->siteFrame($state);
+        $acgV = ($verticalSpeed - $site['vv']) / $tau;
+        $acgH = (0.0 - $site['vh']) / $tau;
+        [$pitch, $thrustFraction] = $this->thrust($state, $site, $acgV, $acgH, $mass, $maxThrust);
+
+        return GuidanceCommand::velocity($pitch, $thrustFraction);
+    }
+
+    /**
+     * AFCCALC1 to AFCCALC3: from the guidance acceleration to the thrust direction and size. The thrust has
+     * to cancel gravity as well, and the engine gives no more than it has; the vertical part has priority.
+     *
+     * @param array{rv: float, rh: float, vv: float, vh: float, upX: float, upY: float, hX: float, hY: float} $site
+     * @return array{float, float} the pitch above the local horizontal and the thrust as a fraction of full thrust
+     */
+    private function thrust(StateVector $state, array $site, float $acgV, float $acgH, float $mass, float $maxThrust): array
+    {
         $r = $state->radius();
         $gravityScale = -Body::Moon->mu() / ($r * $r * $r);
         $gravityV = $gravityScale * ($state->x * $site['upX'] + $state->y * $site['upY']);
@@ -111,14 +154,7 @@ final class LandingGuidance
             $thrustX * $localUpY - $thrustY * $localUpX,
         );
 
-        return new GuidanceCommand(
-            ttf: $ttf,
-            iterations: $iterations,
-            converged: $converged,
-            brakingComplete: $brakingComplete,
-            pitch: $pitch,
-            thrustFraction: hypot($thrustX, $thrustY) / $maxAcceleration,
-        );
+        return [$pitch, hypot($thrustX, $thrustY) / $maxAcceleration];
     }
 
     /**

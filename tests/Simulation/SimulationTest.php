@@ -38,7 +38,7 @@ final class SimulationTest extends TestCase
         self::assertCount(13, $response['dsky']['lights']);
         self::assertNotContains(true, $response['dsky']['lights']);
         self::assertSame(
-            ['view', 'x', 'altitude', 'vx', 'vz', 'pitch', 'throttle', 'fuel', 'target'],
+            ['view', 'x', 'altitude', 'vx', 'vz', 'pitch', 'throttle', 'fuel', 'target', 'program', 'desiredRate'],
             array_keys($response['vehicle']),
         );
     }
@@ -77,26 +77,53 @@ final class SimulationTest extends TestCase
         self::assertSame(5, $response['speed']);
     }
 
-    public function testTheOutcomeIsReportedWhenP63HandsOverToP64(): void
+    /** Starts the landing and answers V99N63 with PRO; the engine ignites on the next tick. */
+    private function ignited(): Simulation
     {
         $simulation = new Simulation();
         $simulation->start(ChapterId::Landing, false);
-        $simulation->tick(new TickInput(speed: 5)); // 0.5 s
-        for ($i = 0; $i < 9; $i++) {
+        for ($i = 0; $i < 10; $i++) {
             $simulation->tick(new TickInput(speed: 5)); // up to TIG-5 s
         }
         $simulation->tick(new TickInput(keys: [Key::Proceed], speed: 10));
 
+        return $simulation;
+    }
+
+    public function testTheLandingRunsThroughP64AndP65ByItselfAndEndsInSuccess(): void
+    {
+        $simulation = $this->ignited();
+
+        $programs = [];
         $response = [];
-        for ($i = 0; $i < 1000 && ($response['outcome'] ?? null) === null; $i++) {
+        for ($i = 0; $i < 2000 && ($response['outcome'] ?? null) === null; $i++) {
             $response = $simulation->tick(new TickInput(speed: 10));
+            $programs[$response['agc']['program']] = true;
         }
 
-        self::assertSame('missed', $response['outcome']);
-        self::assertSame('P64 – Approach phase', $response['agc']['program']);
-        self::assertSame('STARTP64', $response['agc']['routine']['label']);
-        self::assertGreaterThan(1800.0, $response['vehicle']['altitude']);
-        self::assertLessThan(2800.0, $response['vehicle']['altitude']);
+        self::assertSame('success', $response['outcome']);
+        self::assertSame(
+            ['P63 – Braking phase', 'P64 – Approach phase', 'P65 – Automatic landing (3 ft/s)'],
+            array_keys($programs),
+        );
+        self::assertSame(0.0, $response['vehicle']['altitude']);
+        self::assertNull($response['vehicle']['desiredRate']);
+    }
+
+    public function testARodClickInTheTickSwitchesToP66AndMovesTheDesiredRate(): void
+    {
+        $simulation = $this->ignited();
+        do {
+            $response = $simulation->tick(new TickInput(speed: 10));
+        } while ($response['vehicle']['program'] === 63);
+
+        $response = $simulation->tick(new TickInput(rod: -1));
+
+        self::assertSame('P66 – Rate of descent (ROD)', $response['agc']['program']);
+        self::assertSame('66', $response['dsky']['prog']);
+        self::assertSame('60', $response['dsky']['noun']);
+        self::assertContains($response['agc']['routine']['label'], ['RODCOMP', 'P66VERT']);
+        self::assertEqualsWithDelta($response['vehicle']['vz'] - 0.3048, $response['vehicle']['desiredRate'], 0.5);
     }
 
     public function testAnUnbuiltChapterIsRefused(): void

@@ -525,10 +525,10 @@ Voor slice 1 is `git init` nodig, plus een remote naar `git@github.com:jester197
   - [x] Elke DSKY-invoer verschijnt in het log als "invoer → reactie", met de Pinball-routine erbij, en programmawissels verschijnen als `agc`-regels.
   - [x] `RoutineTest` slaagt en de `@see`-grep uit Tests geeft geen bestanden.
 - **6. P64, P65 en P66 met ROD: landen.** AFK. Blocked by: 4.
-  - [ ] Zonder ingrijpen gaat de landing door P64 (V06N64) en P65 (V06N60) en eindigt met `outcome: "success"`. "CONTACT LIGHT" verschijnt.
-  - [ ] Pijl omhoog of omlaag tijdens P64 schakelt naar P66. Elke klik verandert de daalsnelheid met 1 ft/s, zichtbaar in R2 van N60 en op het Canvas.
-  - [ ] Te hard neerkomen geeft `outcome: "crashed"`, een lege tank `outcome: "out_of_fuel"`.
-  - [ ] `LandingGuidanceTest` slaagt volledig.
+  - [x] Zonder ingrijpen gaat de landing door P64 (V06N64) en P65 (V06N60) en eindigt met `outcome: "success"`. "CONTACT LIGHT" verschijnt.
+  - [x] Pijl omhoog of omlaag tijdens P64 schakelt naar P66. Elke klik verandert de daalsnelheid met 1 ft/s, zichtbaar in R2 van N60 en op het Canvas.
+  - [x] Te hard neerkomen geeft `outcome: "crashed"`, een lege tank `outcome: "out_of_fuel"`.
+  - [x] `LandingGuidanceTest` slaagt volledig.
 - **7. Executive en het Apollo 11-scenario.** AFK. Blocked by: 5, 6.
   - [ ] De startknop van de landing heeft een schakelaar "Apollo 11 scenario (1201/1202 alarms)".
   - [ ] Met het scenario gaat tijdens P63 of P64 PROG aan, toont V05N09 de code 01202 of 01201, en loopt de RESTART-teller in het codepaneel op. De landing gaat daarna door en kan slagen.

@@ -95,6 +95,8 @@ class Simulation
             0 => 'P00 – No guidance (free fall)',
             63 => 'P63 – Braking phase',
             64 => 'P64 – Approach phase',
+            65 => 'P65 – Automatic landing (3 ft/s)',
+            66 => 'P66 – Rate of descent (ROD)',
             default => sprintf('P%02d', $majorMode),
         };
     }

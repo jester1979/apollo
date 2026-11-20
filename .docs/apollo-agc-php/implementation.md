@@ -133,3 +133,23 @@ Verified by two builders. `vendor/bin/phpunit` passed with 62 tests and 2882 ass
 - `tests/Trace/RoutineTest.php`: Pinball and V37 line numbers; no two labels are equal
 - `tests/Simulation/SimulationTest.php`: the P63 `agc` line at start, send-once, routine and time of an input line
 - `tests/Chapter/LandingChapterTest.php`: `agc` lines from P63 through ignition to P64, V37 → P00
+
+### 6. P64, P65 en P66 met ROD: landen
+
+`vendor/bin/phpunit` passed with 145 tests and 10974 assertions, including the full `LandingGuidanceTest`, and `vendor/bin/phpstan analyse` reported no errors. In tests a hands-off landing after PRO passes P63, P64 and P65 and ends in `Outcome::Success` at 0.91 m/s vertical and 0.00 m/s horizontal; `rod` −1 in P64 gives `Crashed`, and repeated `rod` +10 gives `OutOfFuel`. In Chrome, run 1 showed 64/06/64 in P64 and 65/06/60 in P65, "CONTACT LIGHT" on the Canvas and "Outcome: success" on the page. In run 2 an ArrowDown press during P64 switched to PROG 66 with V06N60, and R2 read `-00491`, `-00502` and `-00492` after down, down and up: 1.0 ft/s per press.
+
+- `src/Guidance/Luminary/RateOfDescent.php`: P66 (STARTP66, RODCOMP, P66VERT); each ROD click moves the desired altitude rate by 0.3048 m/s while horizontal speed is nulled
+- `src/Guidance/Luminary/LandingGuidance.php`: shared thrust calculation and `velocityPass()` for P65VERT and P66; P64 reuses `pass()` with the approach targets
+- `src/Guidance/Luminary/GuidanceCommand.php`: `GuidanceCommand::velocity()` for passes without a TTF
+- `src/Scenario/LandingTargets.php`: approach targets (low gate 150 m), the 200 m switch to P65, the P65 rate of 3 ft/s, time constants and the ROD scale of 1 ft/s per click
+- `src/Scenario/StartStates.php`: LM dry mass from 7000 to 6500 kg, which gives the approach and landing 500 kg more propellant
+- `src/Chapter/Landing/LandingChapter.php`: flies P63, P64, P65 and P66 to contact; ROD clicks, V06N64 and V06N60, the `out_of_fuel` outcome, `agc` log lines, vehicle view fields `program` and `desiredRate`
+- `src/Trace/Routine.php`: cases P65Start, P65Vert, StartP66, P66Vert, RodComp and Throttle, line numbers checked against the source
+- `src/Simulation/Simulation.php`: program names for P65 and P66
+- `public/assets/views/landing.js`: CONTACT LIGHT at 1.7 m, descent-rate bar with a marker for the wanted rate, fuel and altitude bars, landing-site flag
+- `public/assets/app.js`: ArrowUp and ArrowDown are queued between ticks, clamped to −10..10 and sent as `rod`
+- `public/index.php`: one sentence on what the arrow keys do
+- `tests/Guidance/LandingGuidanceTest.php`: the plan's full list plus crashed, out_of_fuel and P66 tracking
+- `tests/Chapter/LandingChapterTest.php`: updated for the chapter flying on past P64; display, log and click tests
+- `tests/Simulation/SimulationTest.php`: a hands-off success run and a rod click through a tick
+- `tests/Trace/RoutineTest.php`: line-number check for the new routines

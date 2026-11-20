@@ -90,27 +90,148 @@ final class LandingGuidanceTest extends TestCase
         self::assertEqualsWithDelta($first->ttf + 2.0, $second->ttf, 1e-9);
     }
 
-    public function testBrakingBringsTheLanderToHighGateAndSwitchesToP64(): void
+    /** A landing chapter that has been ignited with PRO at TIG, from the PDI start state. */
+    private function ignited(): LandingChapter
     {
         $chapter = new LandingChapter();
         LandingBurn::proceed($chapter);
-        $ticks = 0;
 
-        while ($chapter->outcome() === null) {
-            $chapter->step(1.0, new TickInput(speed: 10));
-            self::assertLessThan(2000, ++$ticks, 'P63 must end');
+        return $chapter;
+    }
+
+    /** Steps in seconds of simulated time until $done, a limit of two hours. */
+    private function runUntil(LandingChapter $chapter, callable $done, float $seconds = 1.0): void
+    {
+        $ticks = 0;
+        while (!$done($chapter)) {
+            $chapter->step($seconds, new TickInput(speed: 10));
+            self::assertLessThan(8000, ++$ticks, 'the condition must be met');
         }
+    }
+
+    public function testBrakingBringsTheLanderToHighGateAndSwitchesToP64(): void
+    {
+        $chapter = $this->ignited();
+
+        $this->runUntil($chapter, static fn (LandingChapter $c): bool => $c->agc()->majorMode !== 63);
 
         $view = $chapter->vehicleView();
-        self::assertSame(Outcome::Missed, $chapter->outcome());
+        self::assertNull($chapter->outcome(), 'the landing goes on in P64');
         self::assertSame(64, $chapter->agc()->majorMode);
-        self::assertSame(Routine::StartP64, $chapter->agc()->currentRoutine);
+        self::assertSame(Routine::QuadGuid, $chapter->agc()->currentRoutine, 'the first approach pass ran right after STARTP64');
         self::assertGreaterThan(1800.0, $view['altitude']);
         self::assertLessThan(2800.0, $view['altitude']);
         self::assertLessThan(100.0, $view['vx'], 'the braking burn took the horizontal speed down from 1690 m/s');
         self::assertGreaterThan(0.0, $view['vx']);
         self::assertGreaterThan(0.0, $view['fuel'], 'fuel is left for the approach');
         self::assertLessThan(0.5, $view['fuel'], 'the burn used fuel');
+    }
+
+    public function testP64SwitchesToP65BelowTwoHundredMetres(): void
+    {
+        $chapter = $this->ignited();
+        $this->runUntil($chapter, static fn (LandingChapter $c): bool => $c->agc()->majorMode === 64);
+
+        $this->runUntil($chapter, static fn (LandingChapter $c): bool => $c->agc()->majorMode !== 64, 0.1);
+
+        $view = $chapter->vehicleView();
+        self::assertSame(65, $chapter->agc()->majorMode);
+        self::assertLessThan(200.0, $view['altitude']);
+        self::assertGreaterThan(100.0, $view['altitude'], 'P64 flew down to low gate before it handed over');
+        self::assertSame(Routine::P65Vert, $chapter->agc()->currentRoutine, 'the first P65 pass ran right after P65START');
+    }
+
+    public function testWithoutARodClickP65LandsGentlyAndTheChapterEndsInSuccess(): void
+    {
+        $chapter = $this->ignited();
+
+        $this->runUntil($chapter, static fn (LandingChapter $c): bool => $c->outcome() !== null);
+
+        $view = $chapter->vehicleView();
+        self::assertSame(Outcome::Success, $chapter->outcome());
+        self::assertSame(65, $chapter->agc()->majorMode, 'nobody clicked, so P66 never started');
+        self::assertLessThan(3.0, abs($view['vz']));
+        self::assertLessThan(1.2, abs($view['vx']));
+        self::assertEqualsWithDelta(0.91, abs($view['vz']), 0.1, 'P65 lands at 3 ft/s');
+        self::assertSame(0.0, $view['altitude']);
+        self::assertGreaterThan(0.02, $view['fuel'], 'a hands-off landing keeps a margin of fuel');
+    }
+
+    public function testOneRodClickInP64SwitchesToP66(): void
+    {
+        $chapter = $this->ignited();
+        $this->runUntil($chapter, static fn (LandingChapter $c): bool => $c->agc()->majorMode === 64);
+        self::assertNull($chapter->vehicleView()['desiredRate']);
+
+        $chapter->step(0.1, new TickInput(rod: -1));
+
+        self::assertSame(66, $chapter->agc()->majorMode);
+        self::assertNull($chapter->outcome());
+        self::assertSame('66', $chapter->agc()->dsky->toArray()['prog']);
+        self::assertNotNull($chapter->vehicleView()['desiredRate']);
+    }
+
+    public function testInP66EveryClickChangesTheDesiredDescentRateBy0Point3048MetresPerSecond(): void
+    {
+        $chapter = $this->ignited();
+        $this->runUntil($chapter, static fn (LandingChapter $c): bool => $c->agc()->majorMode === 64);
+        $chapter->step(0.1, new TickInput(rod: 1));
+        $rate = $chapter->vehicleView()['desiredRate'];
+        self::assertNotNull($rate);
+
+        foreach ([1, 1, -1, 3, -4, 0] as $clicks) {
+            $chapter->step(1.0, new TickInput(rod: $clicks));
+            $now = $chapter->vehicleView()['desiredRate'];
+            self::assertEqualsWithDelta($rate + $clicks * 0.3048, $now, 0.001, sprintf('%d clicks', $clicks));
+            $rate = $now;
+        }
+    }
+
+    public function testInP66TheVehicleFollowsTheDesiredRateAndNullsTheHorizontalSpeed(): void
+    {
+        $chapter = $this->ignited();
+        $this->runUntil($chapter, static fn (LandingChapter $c): bool => $c->agc()->majorMode === 65);
+        $chapter->step(0.1, new TickInput(rod: 4));
+        $before = $chapter->vehicleView()['vz'];
+
+        $chapter->step(15.0, new TickInput());
+
+        $view = $chapter->vehicleView();
+        self::assertSame(66, $chapter->agc()->majorMode);
+        self::assertEqualsWithDelta($view['desiredRate'], $view['vz'], 0.1);
+        self::assertGreaterThan($before, $view['vz'], 'four clicks up: less descent rate');
+        self::assertLessThan(0.3, abs($view['vx']));
+    }
+
+    public function testTooHardAContactIsACrash(): void
+    {
+        $chapter = $this->ignited();
+        $this->runUntil($chapter, static fn (LandingChapter $c): bool => $c->agc()->majorMode === 64);
+
+        // ROD down in P64: P66 holds the descent rate of high gate, about 15 m/s.
+        $chapter->step(0.1, new TickInput(rod: -1));
+        $this->runUntil($chapter, static fn (LandingChapter $c): bool => $c->outcome() !== null);
+
+        self::assertSame(Outcome::Crashed, $chapter->outcome());
+        self::assertGreaterThan(3.0, abs($chapter->vehicleView()['vz']));
+    }
+
+    public function testAnEmptyTankBeforeContactIsOutOfFuel(): void
+    {
+        $chapter = $this->ignited();
+        $this->runUntil($chapter, static fn (LandingChapter $c): bool => $c->agc()->majorMode === 64);
+
+        // ROD up all the way: the vehicle climbs on its engine until the tank is empty.
+        for ($i = 0; $i < 6; $i++) {
+            $chapter->step(1.0, new TickInput(rod: 10));
+        }
+        self::assertGreaterThan(0.0, $chapter->vehicleView()['desiredRate']);
+        $this->runUntil($chapter, static fn (LandingChapter $c): bool => $c->outcome() !== null);
+
+        self::assertSame(Outcome::OutOfFuel, $chapter->outcome());
+        self::assertSame(0.0, $chapter->vehicleView()['fuel']);
+        self::assertSame(0.0, $chapter->vehicleView()['throttle']);
+        self::assertGreaterThan(0.0, $chapter->vehicleView()['altitude']);
     }
 
     public function testTheDpsIgnitesAtMinimumThrottleAndGoesFlatOutAfter26Seconds(): void

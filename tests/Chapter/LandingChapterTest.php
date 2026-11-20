@@ -60,12 +60,12 @@ final class LandingChapterTest extends TestCase
     {
         $chapter = new LandingChapter();
         LandingBurn::proceed($chapter);
-        $chapter->step(1000.0, new TickInput());
+        $chapter->step(2000.0, new TickInput());
         $time = $chapter->agc()->missionTime;
 
-        $chapter->step(10.0, new TickInput());
+        $chapter->step(10.0, new TickInput(rod: 3));
 
-        self::assertSame(Outcome::Missed, $chapter->outcome());
+        self::assertSame(Outcome::Success, $chapter->outcome());
         self::assertSame($time, $chapter->agc()->missionTime);
     }
 
@@ -124,13 +124,38 @@ final class LandingChapterTest extends TestCase
         self::assertTrue($dsky->isLit(Light::CompActy));
     }
 
-    public function testTheDskyShowsP64WhenTheGuidanceHandsOver(): void
+    public function testTheDskyShowsV06N64InP64AndV06N60InP65AndP66(): void
     {
         $chapter = new LandingChapter();
         LandingBurn::proceed($chapter);
-        $chapter->step(1000.0, new TickInput());
+        while ($chapter->agc()->majorMode === 63) {
+            $chapter->step(1.0, new TickInput(speed: 10));
+        }
+        $display = $chapter->agc()->dsky->toArray();
+        self::assertSame(['64', '06', '64', false], [$display['prog'], $display['verb'], $display['noun'], $display['flash']]);
 
-        self::assertSame('64', $chapter->agc()->dsky->toArray()['prog']);
+        while ($chapter->agc()->majorMode === 64) {
+            $chapter->step(1.0, new TickInput(speed: 10));
+        }
+        $display = $chapter->agc()->dsky->toArray();
+        self::assertSame(['65', '06', '60'], [$display['prog'], $display['verb'], $display['noun']]);
+
+        $chapter->step(1.0, new TickInput(rod: 1));
+        $display = $chapter->agc()->dsky->toArray();
+        self::assertSame(['66', '06', '60'], [$display['prog'], $display['verb'], $display['noun']]);
+    }
+
+    public function testInN60R2ShowsTheAltitudeRateInTenthsOfFeetPerSecond(): void
+    {
+        $chapter = new LandingChapter();
+        LandingBurn::proceed($chapter);
+        while ($chapter->agc()->majorMode < 65) {
+            $chapter->step(1.0, new TickInput(speed: 10));
+        }
+        $chapter->step(60.0, new TickInput());
+
+        // P65 has settled at 3 ft/s down: xxxx.x ft/s, so R2 is -30.
+        self::assertEqualsWithDelta(-30, (int) $chapter->agc()->dsky->toArray()['r2'], 1);
     }
 
     /** @param list<Key> $keys */
@@ -302,11 +327,11 @@ final class LandingChapterTest extends TestCase
         self::assertSame(63, $chapter->agc()->majorMode);
     }
 
-    public function testTheLogFollowsTheLandingFromP63ThroughIgnitionToP64(): void
+    public function testTheLogFollowsTheLandingFromP63ThroughIgnitionToP65(): void
     {
         $chapter = new LandingChapter();
         LandingBurn::proceed($chapter);
-        $chapter->step(1000.0, new TickInput());
+        $chapter->step(2000.0, new TickInput());
 
         $lines = $chapter->agc()->log->takeNew();
 
@@ -318,14 +343,44 @@ final class LandingChapterTest extends TestCase
                 'Ignition: the DPS burns at minimum throttle',
                 '26 s after ignition: the DPS throttles up, the braking guidance takes over',
                 'P63 → P64: high gate reached, the approach phase starts',
+                'P64 → P65: low gate reached, the automatic landing starts (3 ft/s down)',
             ],
             array_column($lines, 'text'),
         );
         self::assertSame(
-            ['P63LM', 'V99RECYC', 'PROCKEY', 'BURNBABY', 'P63ZOOM', 'STARTP64'],
+            ['P63LM', 'V99RECYC', 'PROCKEY', 'BURNBABY', 'P63ZOOM', 'STARTP64', 'P65START'],
             array_map(static fn (array $line): ?string => $line['routine']['label'] ?? null, $lines),
         );
-        self::assertSame(['agc', 'agc', 'input', 'agc', 'agc', 'agc'], array_column($lines, 'kind'));
+        self::assertSame(['agc', 'agc', 'input', 'agc', 'agc', 'agc', 'agc'], array_column($lines, 'kind'));
+    }
+
+    public function testARodClickIsLoggedAsStartP66AndRodComp(): void
+    {
+        $chapter = new LandingChapter();
+        LandingBurn::proceed($chapter);
+        while ($chapter->agc()->majorMode === 63) {
+            $chapter->step(1.0, new TickInput(speed: 10));
+        }
+        $chapter->agc()->log->takeNew();
+
+        $chapter->step(0.1, new TickInput(rod: 2));
+        $lines = $chapter->agc()->log->takeNew();
+
+        self::assertSame(['STARTP66', 'RODCOMP'], array_map(static fn (array $line): ?string => $line['routine']['label'] ?? null, $lines));
+        self::assertSame('ROD switch clicked: P64 → P66, the desired altitude rate starts at the present rate', $lines[0]['text']);
+        self::assertStringStartsWith('ROD +2: the desired altitude rate is now ', $lines[1]['text']);
+        self::assertSame('agc', $lines[0]['kind']);
+    }
+
+    public function testRodClicksBeforeP64AreDropped(): void
+    {
+        $chapter = new LandingChapter();
+        LandingBurn::proceed($chapter);
+
+        $chapter->step(20.0, new TickInput(rod: 5));
+
+        self::assertSame(63, $chapter->agc()->majorMode);
+        self::assertNull($chapter->vehicleView()['desiredRate']);
     }
 
     public function testV37ToP00IsLoggedAsAProgramChange(): void

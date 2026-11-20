@@ -51,6 +51,27 @@ final class RoutineTest extends TestCase
         self::assertSame([], $lines, 'every logged routine is a case');
     }
 
+    public function testTheLabelsOfTheLandingRoutinesPointAtTheirLines(): void
+    {
+        $lines = [
+            'STARTP64' => 260,
+            'P65START' => 252,
+            'P65VERT' => 907,
+            'STARTP66' => 143,
+            'P66VERT' => 919,
+            'RODCOMP' => 948,
+            'THROTTLE' => 37,
+        ];
+        foreach (Routine::cases() as $routine) {
+            if (isset($lines[$routine->label()])) {
+                self::assertSame($lines[$routine->label()], $routine->line(), $routine->label());
+                unset($lines[$routine->label()]);
+            }
+        }
+
+        self::assertSame([], $lines, 'every landing routine is a case');
+    }
+
     public function testNoTwoRoutinesShareALabel(): void
     {
         $labels = array_map(static fn (Routine $routine): string => $routine->label(), Routine::cases());

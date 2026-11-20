@@ -26,4 +26,10 @@ final readonly class GuidanceCommand
         public float $thrustFraction,
     ) {
     }
+
+    /** The command of a velocity loop pass (P65, P66): there is no time to go to solve. */
+    public static function velocity(float $pitch, float $thrustFraction): self
+    {
+        return new self(ttf: 0.0, iterations: 0, converged: true, brakingComplete: false, pitch: $pitch, thrustFraction: $thrustFraction);
+    }
 }

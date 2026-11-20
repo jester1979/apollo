@@ -13,7 +13,9 @@ namespace Apollo\Scenario;
  *
  * The original targets RBRFG, VBRFG, ABRFG and JBRFG are pad-loaded erasables
  * (ERASABLE_ASSIGNMENTS.agc), so their values are not in the source. These are chosen so that
- * the braking phase ends at high gate, about 2 300 m above the surface.
+ * the braking phase ends at high gate, about 2 300 m above the surface, and the approach phase at
+ * low gate, about 150 m above it. The same holds for the vertical-phase constants below (V2FG,
+ * TAUVERT, TAUROD, RODSCALE): pad-loaded, so chosen here.
  *
  * @see Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc RDG
  */
@@ -56,4 +58,33 @@ final readonly class LandingTargets
      * Stands in for the pad-loaded TCGFAPPR and DELTTFAP of the original.
      */
     public const SWITCH_TO_APPROACH_TTF = 4.0;
+
+    /** RAPFG, VAPFG, AAPFG: the approach phase (P64) aims at low gate, about 150 m above the site. */
+    public static function approach(): self
+    {
+        return new self(
+            positionVertical: 150.0,
+            positionHorizontal: -120.0,
+            velocityVertical: -10.0,
+            velocityHorizontal: 20.0,
+            accelerationVertical: 0.0,
+            accelerationHorizontal: -0.3,
+            jerkHorizontal: 0.0,
+        );
+    }
+
+    /** P64 hands over to P65 when the altitude falls below this, in metres. */
+    public const SWITCH_TO_P65_ALTITUDE = 200.0;
+
+    /** V2FG: the vertical speed P65 lands with, 3 ft/s, in m/s (negative: down). The horizontal part is zero. */
+    public const P65_DESCENT_RATE = -0.9144;
+
+    /** TAUVERT: time constant of the P65 velocity loop, in seconds. */
+    public const TAU_VERTICAL = 10.0;
+
+    /** TAUROD: time constant of the P66 rate-of-descent loop, in seconds. */
+    public const TAU_ROD = 2.0;
+
+    /** RODSCALE: the change of the desired descent rate per ROD click, 1 ft/s, in m/s. */
+    public const ROD_SCALE = 0.3048;
 }

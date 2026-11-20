@@ -1,2 +1,3 @@
 - [chrome-devtools profile lock](chrome-devtools-profile-lock.md) — the MCP fails with "browser is already running" when another Chrome holds its profile
 - [Session objects hold no closures](session-objects-hold-no-closures.md) — the Simulation graph is serialized into the session on every request
+- [Landing fuel budget](landing-fuel-budget.md) — hands-off landing ends with about 6% fuel; re-run it after any change to targets, start state or mass
