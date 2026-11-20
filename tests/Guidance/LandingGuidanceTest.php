@@ -203,6 +203,24 @@ final class LandingGuidanceTest extends TestCase
         self::assertLessThan(0.3, abs($view['vx']));
     }
 
+    public function testALargeDownRequestOnTheRodSwitchNeverPointsTheEngineAtTheGround(): void
+    {
+        $vehicle = StartStates::landingVehicle();
+        $state = StartStates::landingState();
+
+        // 60 m/s below the present vertical speed with a 2 s loop asks for far more than free fall.
+        $command = $this->guidance()->velocityPass(
+            $state,
+            $vehicle->mass,
+            $vehicle->maxThrust,
+            $state->radialVelocity() - 60.0,
+            LandingTargets::TAU_ROD,
+        );
+
+        self::assertGreaterThanOrEqual(0.0, $command->pitch, 'the thrust has no part towards the ground');
+        self::assertLessThanOrEqual(M_PI, $command->pitch);
+    }
+
     public function testTooHardAContactIsACrash(): void
     {
         $chapter = $this->ignited();

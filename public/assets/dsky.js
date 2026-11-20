@@ -136,14 +136,9 @@ export function createDsky(container, onKey = () => {}) {
             button.type = 'button';
             button.disabled = true;
             button.dataset.key = keyName(key);
-            button.addEventListener('click', (event) => {
+            button.addEventListener('click', () => {
                 if (enabled) {
                     onKey(keyName(key));
-                }
-                // After a mouse click the focus must not stay on the key: Enter on the keyboard is
-                // ENTR, not another press of the key that was clicked. (Keyboard activation has detail 0.)
-                if (event.detail > 0) {
-                    button.blur();
                 }
             });
             buttons.push(button);
@@ -155,6 +150,16 @@ export function createDsky(container, onKey = () => {}) {
     const panel = element('div', 'dsky-panel');
     panel.append(display, keypad);
     container.replaceChildren(panel);
+
+    // After a mouse click the focus must not stay on a button, on the DSKY or anywhere else on the page
+    // (speed, start, next chapter): Enter on the keyboard is ENTR, not another press of the button that
+    // was clicked. Keyboard activation has detail 0 and keeps its focus.
+    document.addEventListener('click', (event) => {
+        const clicked = event.target instanceof Element ? event.target.closest('button') : null;
+        if (event.detail > 0 && clicked instanceof HTMLElement) {
+            clicked.blur();
+        }
+    });
 
     document.addEventListener('keydown', (event) => {
         if (!enabled || event.repeat || event.ctrlKey || event.metaKey || event.altKey) {

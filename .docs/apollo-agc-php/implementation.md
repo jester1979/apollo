@@ -353,6 +353,14 @@ Two reviewers ran in one round and both returned `pass` with no blocking finding
   - Low, from slice 1: every request to `/api.php` creates a session file, and there is no rate limit.
 - Notes from the delivery reviewer: during its run another actor drove the same Chrome (a page reloaded and keys arrived that it did not send); its results come from its own isolated page. A manual P66 landing is tight on fuel and the README does not warn the player. In the launch the dropped S-IC was not clearly visible in the one frame it looked at; the builder of slice 8 saw both separations in screenshots.
 
+### Fixes after the gate
+
+Both Medium findings are fixed; the Low findings stay open.
+
+- `src/Guidance/Luminary/LandingGuidance.php`: the velocity loop of P65 and P66 clamps the vertical thrust at zero, so a large down request on the ROD switch gives no vertical thrust instead of thrust towards the ground. `RateOfDescent` still has no floor on the desired rate: the lander then falls freely. `LandingGuidanceTest::testALargeDownRequestOnTheRodSwitchNeverPointsTheEngineAtTheGround` fails without the clamp (pitch −1.85 rad) and passes with it.
+- `public/assets/dsky.js`: one `click` listener on `document` blurs every button after a pointer click; it replaces the blur each DSKY key had. Checked in Chrome: after a mouse click on the 2× speed button, `V05N09` followed by Enter on the keyboard reached the DSKY and the log showed `V05N09 ENTR`.
+- After the fixes: 355 tests pass, PHPStan reports no errors.
+
 ## Deviations from the plan
 
 - The setup differs from the plan's Current state: the working directory had no git repo. On the user's choice the build ran `git init -b main`, added `origin` (`git@github.com:jester1979/apollo.git`, nothing pushed), made one empty root commit on `main` and worked on `radish-build/apollo-agc-php`. There is no `Base:` line because `origin` has no branch.

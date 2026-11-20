@@ -122,7 +122,7 @@ final class LandingGuidance
         $site = $this->siteFrame($state);
         $acgV = ($verticalSpeed - $site['vv']) / $tau;
         $acgH = (0.0 - $site['vh']) / $tau;
-        [$pitch, $thrustFraction] = $this->thrust($state, $site, $acgV, $acgH, $mass, $maxThrust);
+        [$pitch, $thrustFraction] = $this->thrust($state, $site, $acgV, $acgH, $mass, $maxThrust, upwardOnly: true);
 
         return GuidanceCommand::velocity($pitch, $thrustFraction);
     }
@@ -132,15 +132,20 @@ final class LandingGuidance
      * to cancel gravity as well, and the engine gives no more than it has; the vertical part has priority.
      *
      * @param array{rv: float, rh: float, vv: float, vh: float, upX: float, upY: float, hX: float, hY: float} $site
+     * @param bool $upwardOnly the vertical phases keep the engine pointing up: a wanted descent rate that
+     *                         asks for more than free fall gets no vertical thrust, not thrust towards the ground
      * @return array{float, float} the pitch above the local horizontal and the thrust as a fraction of full thrust
      */
-    private function thrust(StateVector $state, array $site, float $acgV, float $acgH, float $mass, float $maxThrust): array
+    private function thrust(StateVector $state, array $site, float $acgV, float $acgH, float $mass, float $maxThrust, bool $upwardOnly = false): array
     {
         $r = $state->radius();
         $gravityScale = -Body::Moon->mu() / ($r * $r * $r);
         $gravityV = $gravityScale * ($state->x * $site['upX'] + $state->y * $site['upY']);
         $gravityH = $gravityScale * ($state->x * $site['hX'] + $state->y * $site['hY']);
         $thrustV = $acgV - $gravityV;
+        if ($upwardOnly) {
+            $thrustV = max(0.0, $thrustV);
+        }
         $thrustH = $acgH - $gravityH;
 
         // AFCCALC2: no more than the engine can give; the vertical part has priority.
