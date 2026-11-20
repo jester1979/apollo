@@ -512,9 +512,9 @@ Voor slice 1 is `git init` nodig, plus een remote naar `git@github.com:jester197
   - [x] Het Canvas toont de vlam die meeschaalt met de gasklep, en de brandstofbalk loopt terug.
   - [x] `LandingGuidanceTest` (P63-deel en de TTF-convergentie) slaagt.
 - **3. De DSKY toont wat de computer doet.** AFK. Blocked by: 2.
-  - [ ] Tijdens P63 toont de DSKY PROG 63 en VERB 06 NOUN 63, met R1 de snelheid (ft/s), R2 de stijgsnelheid (ft/s) en R3 de hoogte (ft), opgemaakt volgens `DisplayFormatterTest`.
-  - [ ] COMP ACTY licht op als de geleiding rekent.
-  - [ ] `DisplayFormatterTest` slaagt.
+  - [x] Tijdens P63 toont de DSKY PROG 63 en VERB 06 NOUN 63, met R1 de snelheid (ft/s), R2 de stijgsnelheid (ft/s) en R3 de hoogte (ft), opgemaakt volgens `DisplayFormatterTest`.
+  - [x] COMP ACTY licht op als de geleiding rekent.
+  - [x] `DisplayFormatterTest` slaagt.
 - **4. DSKY-invoer.** AFK. Blocked by: 3.
   - [ ] Met de muis of het toetsenbord geeft `V16N68 ENTR` een weergave van de afstand tot het landingspunt, die elke seconde ververst, en KEY REL brengt V06N63 terug.
   - [ ] V35 test alle lampjes. Een onbekend verb of noun zet OPR ERR aan, en RSET dooft het.

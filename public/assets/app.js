@@ -1,3 +1,4 @@
+import { createDsky } from './dsky.js';
 import { render as renderLanding } from './views/landing.js';
 
 const API_URL = '/api.php';
@@ -10,6 +11,11 @@ const statusLine = document.getElementById('status');
 const outcomeLine = document.getElementById('outcome');
 const canvas = document.getElementById('view');
 const ctx = canvas.getContext('2d');
+
+const dsky = createDsky(document.getElementById('dsky'));
+dsky.render({
+    prog: '', verb: '', noun: '', r1: '', r2: '', r3: '', flash: false, lights: {},
+});
 
 let runId = 0;
 
@@ -39,6 +45,7 @@ function show(state) {
     if (view) {
         view(ctx, state.vehicle, state.t);
     }
+    dsky.render(state.dsky);
     statusLine.textContent = `t = ${state.t.toFixed(1)} s · altitude ${state.vehicle.altitude.toFixed(0)} m`;
     if (state.outcome !== null) {
         outcomeLine.dataset.outcome = state.outcome;

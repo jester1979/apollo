@@ -67,3 +67,28 @@ Verified by two builders. `vendor/bin/phpunit` passed with 62 tests and 2882 ass
 - `tests/Trace/RoutineTest.php`: routine fields and the QUADGUID url
 - `tests/Chapter/LandingChapterTest.php`: adapted to the powered start state; crash at contact via free fall from 100 m
 - `tests/Simulation/SimulationTest.php`: adapted; routine P63LM at start, `missed` at P64 between 1800 and 2800 m
+
+### 3. De DSKY toont wat de computer doet
+
+`vendor/bin/phpunit` passed with 89 tests and 2956 assertions, including `DisplayFormatterTest`, and `vendor/bin/phpstan analyse` reported no errors. In Chrome, after the start the DSKY showed PROG 63, VERB 06, NOUN 63, R1 `+55446` (1690 m/s is 5544.6 ft/s), R2 `+00000` and R3 `+50000` (15240 m is 50000 ft), and the registers updated every 2 s. The COMP ACTY lamp switched on at every guidance pass (t=28.1, 30.1, 32.1 s) for about 0.5 s and was off in between. The console showed no CSP violations and no JS errors.
+
+- `src/Dsky/Dsky.php`: DSKY display model (port of NVSUB/GODSP and DSPMM) with `requestDisplay`, `supplyData`, `showMajorMode`, `setLight` and `toArray`
+- `src/Dsky/NounTable.php`: per-computer noun table; LM has N09, 60, 63, 64 and 68, CM has N09, taken from `ASSEMBLY_AND_OPERATION_INFORMATION.agc`
+- `src/Dsky/Noun.php`: value type for a noun (1 to 3 components)
+- `src/Dsky/NounComponent.php`: value type pairing a unit with a format
+- `src/Dsky/Unit.php`: unit enum; SI to ft, ft/s and NM conversion, applied only by `DisplayFormatter`
+- `src/Dsky/Format.php`: enum of the register formats
+- `src/Dsky/DisplayFormatter.php`: sign plus 5 digits, clamps at 99999 without an alarm, blank for NaN
+- `src/Dsky/Light.php`: enum of the 13 lights; lights without a model stay off
+- `src/Agc/Agc.php`: the AGC owns its `Dsky`
+- `src/Chapter/Landing/LandingChapter.php`: shows V06N63 at start and refreshes it every 2 s, sets PROG to 63 then 64, sets COMP ACTY from the guidance passes
+- `src/Simulation/Simulation.php`: tick response carries the real `dsky` object
+- `public/assets/dsky.js`: HTML/CSS DSKY (display, 13 lights, 19 keys drawn but disabled), `textContent` only
+- `public/assets/app.js`: creates the DSKY and renders it on every tick
+- `public/index.php`: `.stage` wrapper and the DSKY section next to the canvas
+- `public/assets/style.css`: DSKY layout and colours, a CSS flash animation, the stage layout
+- `tests/Dsky/DisplayFormatterTest.php`: the plan's cases plus the time formats, NaN and unit conversion
+- `tests/Dsky/NounTableTest.php`: N63 and N68 components; each computer knows only its own nouns
+- `tests/Dsky/DskyTest.php`: V06N63 display, blank registers, noun change, flash, lights, refusal of an invalid verb, noun or value count
+- `tests/Chapter/LandingChapterTest.php`: V06N63 at start, the 2 s refresh, COMP ACTY on and off, PROG 64 at hand-over
+- `tests/Simulation/SimulationTest.php`: the response carries the real dsky shape

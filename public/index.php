@@ -24,7 +24,10 @@ header('Content-Type: text/html; charset=utf-8');
             <button type="button" id="start">Start landing</button>
             <span id="status" role="status" aria-live="polite"></span>
         </div>
-        <canvas id="view" width="800" height="500" aria-label="Lunar module braking above the lunar surface"></canvas>
+        <div class="stage">
+            <canvas id="view" width="800" height="500" aria-label="Lunar module braking above the lunar surface"></canvas>
+            <section id="dsky" class="dsky" aria-label="DSKY of the lunar module"></section>
+        </div>
         <p id="outcome" class="outcome" role="status" aria-live="polite"></p>
         <noscript>This page needs JavaScript.</noscript>
     </main>

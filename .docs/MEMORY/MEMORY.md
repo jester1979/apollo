@@ -1,1 +1,2 @@
 - [chrome-devtools profile lock](chrome-devtools-profile-lock.md) — the MCP fails with "browser is already running" when another Chrome holds its profile
+- [Session objects hold no closures](session-objects-hold-no-closures.md) — the Simulation graph is serialized into the session on every request

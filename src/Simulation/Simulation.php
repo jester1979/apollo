@@ -63,18 +63,7 @@ class Simulation
             't' => round($agc->missionTime, 1),
             'speed' => $this->speed,
             'outcome' => $chapter->outcome()?->value,
-            // Placeholder until the DSKY exists (slice 3): blank registers, all lights off.
-            'dsky' => [
-                'prog' => '', 'verb' => '', 'noun' => '',
-                'r1' => '', 'r2' => '', 'r3' => '',
-                'flash' => false,
-                'lights' => [
-                    'compActy' => false, 'prog' => false, 'oprErr' => false, 'keyRel' => false,
-                    'restart' => false, 'uplinkActy' => false, 'noAtt' => false, 'stby' => false,
-                    'temp' => false, 'gimbalLock' => false, 'tracker' => false, 'alt' => false,
-                    'vel' => false,
-                ],
-            ],
+            'dsky' => $agc->dsky->toArray(),
             'vehicle' => $chapter->vehicleView(),
             // Placeholder until the Executive (slice 7) exists.
             'agc' => [

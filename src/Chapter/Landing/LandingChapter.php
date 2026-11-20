@@ -8,6 +8,7 @@ use Apollo\Agc\Agc;
 use Apollo\Chapter\Chapter;
 use Apollo\Chapter\ChapterId;
 use Apollo\Chapter\Outcome;
+use Apollo\Dsky\Light;
 use Apollo\Guidance\Luminary\LandingGuidance;
 use Apollo\Guidance\Luminary\Throttle;
 use Apollo\Physics\Body;
@@ -22,11 +23,13 @@ use Apollo\Trace\Routine;
 /**
  * The landing chapter. The descent engine ignites at once at minimum throttle, goes flat out after
  * 26 s and from then on the braking guidance (P63, QUADGUID) steers it every 2 s. P63 hands over to
- * P64 at high gate; until P64 exists the chapter ends there as missed.
+ * P64 at high gate; until P64 exists the chapter ends there as missed. During P63 the DSKY shows
+ * V06N63, refreshed every 2 s, and COMP ACTY lights while the guidance computes.
  *
  * @see Luminary099/THE_LUNAR_LANDING.agc P63LM
  * @see Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc BURNBABY
  * @see Luminary099/SERVICER.agc SERVICER
+ * @see Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc P63DISPS
  */
 final class LandingChapter implements Chapter
 {
@@ -40,6 +43,12 @@ final class LandingChapter implements Chapter
     /** The DPS burns at minimum throttle for 26 s after ignition, then throttles up (BURNBABY). */
     private const IGNITION_STEPS = 260;
 
+    /**
+     * COMP ACTY stays lit for 0.5 s after a guidance pass, so that it is visible between ticks. The
+     * length is a display choice, not measured AGC timing.
+     */
+    private const COMP_ACTY_STEPS = 5;
+
     private StateVector $state;
     private Vehicle $vehicle;
     private readonly float $startFuelMass;
@@ -48,6 +57,8 @@ final class LandingChapter implements Chapter
     private readonly LandingGuidance $guidance;
     private readonly Throttle $throttle;
     private int $steps = 0;
+    private ?int $lastGuidanceStep = null;
+    private bool $guidedThisStep = false;
     private ?Outcome $outcome = null;
 
     /** @param StateVector|null $state start state; the PDI state of the chapter when omitted */
@@ -64,6 +75,8 @@ final class LandingChapter implements Chapter
             StartStates::LANDING_SITE_DOWNRANGE / Body::Moon->radius(),
         );
         $this->ignite();
+        $this->agc->dsky->showMajorMode($this->agc->majorMode);
+        $this->displayP63();
     }
 
     public function id(): ChapterId
@@ -82,6 +95,7 @@ final class LandingChapter implements Chapter
         if ($steps > 0 && $this->steps === 0) {
             $this->agc->currentRoutine = Routine::BurnBaby;
         }
+        $this->guidedThisStep = false;
         for ($i = 0; $i < $steps && $this->outcome === null; $i++) {
             if ($this->steps >= self::IGNITION_STEPS && $this->steps % self::GUIDANCE_STEPS === 0) {
                 $this->guide();
@@ -93,7 +107,11 @@ final class LandingChapter implements Chapter
             $this->agc->missionTime += Integrator::STEP;
             $this->steps++;
             $this->checkContact();
+            if ($this->outcome === null && $this->steps % self::GUIDANCE_STEPS === 0) {
+                $this->displayP63();
+            }
         }
+        $this->agc->dsky->setLight(Light::CompActy, $this->guidanceIsComputing());
     }
 
     public function vehicleView(): array
@@ -132,6 +150,8 @@ final class LandingChapter implements Chapter
             $this->vehicle->throttle = $this->throttle->flatOut();
         }
 
+        $this->lastGuidanceStep = $this->steps;
+        $this->guidedThisStep = true;
         $this->agc->currentRoutine = Routine::RootPsrs;
         $command = $this->guidance->pass(
             $this->state,
@@ -144,6 +164,7 @@ final class LandingChapter implements Chapter
         if ($command->brakingComplete) {
             // STARTP64. The approach phase does not exist yet, so the chapter stops here.
             $this->agc->majorMode = 64;
+            $this->agc->dsky->showMajorMode(64);
             $this->agc->currentRoutine = Routine::StartP64;
             $this->outcome = Outcome::Missed;
 
@@ -152,6 +173,24 @@ final class LandingChapter implements Chapter
 
         $this->vehicle->pitch = $command->pitch;
         $this->vehicle->throttle = $this->throttle->command($command->thrustFraction);
+    }
+
+    /** P63DISPS: V06N63 shows the speed, the altitude rate and the altitude, in ft/s and ft. */
+    private function displayP63(): void
+    {
+        $dsky = $this->agc->dsky;
+        $dsky->requestDisplay(6, 63, false);
+        $dsky->supplyData([
+            hypot($this->state->horizontalVelocity(), $this->state->radialVelocity()),
+            $this->state->radialVelocity(),
+            max(0.0, $this->state->altitude(Body::Moon)),
+        ]);
+    }
+
+    private function guidanceIsComputing(): bool
+    {
+        return $this->guidedThisStep
+            || ($this->lastGuidanceStep !== null && $this->steps - $this->lastGuidanceStep < self::COMP_ACTY_STEPS);
     }
 
     private function checkContact(): void

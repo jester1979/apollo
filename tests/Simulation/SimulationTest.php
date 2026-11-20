@@ -40,6 +40,29 @@ final class SimulationTest extends TestCase
         );
     }
 
+    public function testTheResponseCarriesTheRealDsky(): void
+    {
+        $simulation = new Simulation();
+        $simulation->start(ChapterId::Landing, false);
+
+        $response = $simulation->tick(new TickInput(speed: 10));
+
+        self::assertSame(
+            ['prog', 'verb', 'noun', 'r1', 'r2', 'r3', 'flash', 'lights'],
+            array_keys($response['dsky']),
+        );
+        self::assertSame('63', $response['dsky']['prog']);
+        self::assertSame('06', $response['dsky']['verb']);
+        self::assertSame('63', $response['dsky']['noun']);
+        self::assertMatchesRegularExpression('/^[+-]\d{5}$/', $response['dsky']['r1']);
+        self::assertMatchesRegularExpression('/^[+-]\d{5}$/', $response['dsky']['r2']);
+        self::assertMatchesRegularExpression('/^[+-]\d{5}$/', $response['dsky']['r3']);
+        self::assertSame(
+            ['compActy', 'prog', 'oprErr', 'keyRel', 'restart', 'uplinkActy', 'noAtt', 'stby', 'temp', 'gimbalLock', 'tracker', 'alt', 'vel'],
+            array_keys($response['dsky']['lights']),
+        );
+    }
+
     public function testATickAdvancesByTenthsOfASecondTimesSpeed(): void
     {
         $simulation = new Simulation();

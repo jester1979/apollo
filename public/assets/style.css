@@ -68,3 +68,147 @@ canvas {
 .outcome[data-outcome="success"] {
     color: #6be38c;
 }
+
+.stage {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1.5rem;
+}
+
+.stage canvas {
+    flex: 1 1 520px;
+    min-width: 0;
+}
+
+.dsky {
+    flex: 0 0 auto;
+}
+
+.dsky-panel {
+    width: 18rem;
+    padding: 0.75rem;
+    border: 1px solid #4a5560;
+    border-radius: 6px;
+    background: #2b3036;
+}
+
+.dsky-display {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem 0.6rem;
+    padding: 0.6rem;
+    border-radius: 4px;
+    background: #050805;
+}
+
+.dsky-lights {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.2rem;
+    align-content: start;
+}
+
+.dsky-light {
+    padding: 0.2rem 0.25rem;
+    border-radius: 2px;
+    background: #2a2a24;
+    color: #55554a;
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+    text-align: center;
+}
+
+.dsky-light.on {
+    background: #f1c232;
+    color: #1a1400;
+    font-weight: 700;
+}
+
+.dsky-codes {
+    display: grid;
+    gap: 0.2rem;
+    align-content: start;
+}
+
+.dsky-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.dsky-field-label {
+    color: #7d8a7d;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+}
+
+.dsky-digits {
+    display: block;
+    min-height: 1.6em;
+    padding: 0.1rem 0.4rem;
+    border-radius: 2px;
+    background: #0b140b;
+    color: #5dff6a;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 1.35rem;
+    letter-spacing: 0.12em;
+    text-align: right;
+    white-space: pre;
+}
+
+.dsky-field:has(.dsky-register) {
+    grid-column: 1 / -1;
+}
+
+.dsky-digits.flash {
+    animation: dsky-flash 1.2s steps(1, end) infinite;
+}
+
+@keyframes dsky-flash {
+    50% {
+        color: transparent;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dsky-digits.flash {
+        animation: none;
+    }
+}
+
+.dsky-keys {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+}
+
+.dsky-keys-left,
+.dsky-keys-right {
+    display: grid;
+    gap: 0.3rem;
+    align-content: start;
+}
+
+.dsky-keys-digits {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.3rem;
+    align-content: start;
+}
+
+.dsky-key {
+    padding: 0.35rem 0.2rem;
+    border: 1px solid #1a1d20;
+    border-radius: 4px;
+    background: #14171a;
+    color: #e6e6e6;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.dsky-key:disabled {
+    opacity: 1;
+    cursor: default;
+}
