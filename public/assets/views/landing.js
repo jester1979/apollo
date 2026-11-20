@@ -1,5 +1,5 @@
 // Side view of the lunar module above the lunar surface.
-// Reads only the fields of the "landing" vehicle view: altitude, vx, vz, x, throttle, fuel, target.
+// Reads only the fields of the "landing" vehicle view: altitude, vx, vz, x, throttle, fuel.
 
 const GROUND_Y = 440;
 const TOP_MARGIN = 40;
@@ -31,6 +31,36 @@ function drawSurface(ctx, width, height, downrange) {
         ctx.lineTo(x + 30, GROUND_Y + 24);
     }
     ctx.stroke();
+}
+
+// Exhaust flame of the descent engine; its length follows the throttle (0..1).
+function drawFlame(ctx, cx, cy, throttle) {
+    if (throttle <= 0) {
+        return;
+    }
+    const length = 10 + throttle * 70;
+    const half = 5 + throttle * 6;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    ctx.fillStyle = '#ff8a1f';
+    ctx.beginPath();
+    ctx.moveTo(-half, 14);
+    ctx.lineTo(0, 14 + length);
+    ctx.lineTo(half, 14);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#fff3b0';
+    ctx.beginPath();
+    ctx.moveTo(-half / 2, 14);
+    ctx.lineTo(0, 14 + length * 0.6);
+    ctx.lineTo(half / 2, 14);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
 }
 
 function drawLander(ctx, cx, cy) {
@@ -74,7 +104,25 @@ function drawReadout(ctx, width, view, t) {
     ctx.fillText(`ALT    ${view.altitude.toFixed(0)} m`, 16, 46);
     ctx.fillText(`V RAD  ${view.vz.toFixed(1)} m/s`, 16, 66);
     ctx.fillText(`V HOR  ${view.vx.toFixed(1)} m/s`, 16, 86);
-    ctx.fillText(`FUEL   ${(view.fuel * 100).toFixed(0)} %`, 16, 106);
+    ctx.fillText(`THRTL  ${(view.throttle * 100).toFixed(0)} %`, 16, 106);
+    ctx.fillText(`FUEL   ${(view.fuel * 100).toFixed(0)} %`, 16, 126);
+
+    // fuel bar
+    const fuelFraction = Math.min(Math.max(view.fuel, 0), 1);
+    const fuelBarX = width - 70;
+    const fuelBarTop = TOP_MARGIN;
+    const fuelBarHeight = GROUND_Y - TOP_MARGIN - 30;
+    ctx.strokeStyle = '#5b6b7a';
+    ctx.strokeRect(fuelBarX, fuelBarTop, 16, fuelBarHeight);
+    ctx.fillStyle = fuelFraction > 0.15 ? '#5fbf6a' : '#d95b3d';
+    ctx.fillRect(fuelBarX, fuelBarTop + fuelBarHeight * (1 - fuelFraction), 16, fuelBarHeight * fuelFraction);
+    ctx.fillStyle = '#9aa7b3';
+    ctx.font = '11px ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('FUEL', fuelBarX + 8, fuelBarTop - 6);
+    ctx.fillText('ALT', width - 32, TOP_MARGIN - 6);
+    ctx.textAlign = 'left';
+    ctx.font = '14px ui-monospace, monospace';
 
     // altitude bar
     const barX = width - 40;
@@ -94,6 +142,8 @@ export function render(ctx, vehicleView, t) {
     ctx.fillRect(0, 0, width, height);
 
     drawSurface(ctx, width, height, vehicleView.x);
-    drawLander(ctx, width / 2, altitudeToY(vehicleView.altitude));
+    const landerY = altitudeToY(vehicleView.altitude);
+    drawFlame(ctx, width / 2, landerY, vehicleView.throttle);
+    drawLander(ctx, width / 2, landerY);
     drawReadout(ctx, width, vehicleView, t);
 }

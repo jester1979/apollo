@@ -76,10 +76,10 @@ class Simulation
                 ],
             ],
             'vehicle' => $chapter->vehicleView(),
-            // Placeholders until routines (slice 5) and the Executive (slice 7) exist.
+            // Placeholder until the Executive (slice 7) exists.
             'agc' => [
-                'routine' => null,
-                'program' => $agc->majorMode === 0 ? 'P00 – No guidance (free fall)' : 'P' . sprintf('%02d', $agc->majorMode),
+                'routine' => $agc->currentRoutine?->toArray(),
+                'program' => $this->programName($agc->majorMode),
                 'executive' => [
                     'coreSets' => array_fill(0, 7, null),
                     'vacAreas' => array_fill(0, 5, null),
@@ -89,5 +89,15 @@ class Simulation
             ],
             'log' => [],
         ];
+    }
+
+    private function programName(int $majorMode): string
+    {
+        return match ($majorMode) {
+            0 => 'P00 – No guidance (free fall)',
+            63 => 'P63 – Braking phase',
+            64 => 'P64 – Approach phase',
+            default => sprintf('P%02d', $majorMode),
+        };
     }
 }

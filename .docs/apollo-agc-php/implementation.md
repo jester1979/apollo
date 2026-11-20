@@ -46,3 +46,24 @@ Verified by two builders. From the command line: `composer install` succeeded, `
 - `tests/Chapter/LandingChapterTest.php`: altitude drops every tick, the lander crashes, a finished chapter stays frozen
 - `tests/Chapter/ChapterIdTest.php`: mission order and computer per chapter
 - `tests/Simulation/SimulationTest.php`: response shape, speed times 0.1 s, outcome at contact
+
+### 2. P63-geleiding: de maanlander remt af
+
+Verified by two builders. `vendor/bin/phpunit` passed with 62 tests and 2882 assertions, including `LandingGuidanceTest`, and `vendor/bin/phpstan analyse` reported no errors. The TTF solver converged in 4 iterations on the start state, and in at most 4 over 304 guidance passes. Through `/api.php` the DPS ignited at 10% throttle, went to 100% after 26 s and throttled back to 42% at t=500 s. At t=632 s the chapter ended with `outcome: "missed"` in P64 at 2305.6 m, with 14.6% of the fuel left. In Chrome, four screenshots showed the flame small at 10% throttle, long at 100% and shorter at 42% and 33%, while the fuel bar fell from full to 50%, 24% and 15%. The page showed "Outcome: missed".
+
+- `src/Trace/Routine.php`: new enum with the cases this slice sets (P63LM, QUADGUID, ROOTPSRS, STARTP64, BURNBABY), each with label, file, line, url and `toArray`
+- `src/Guidance/Luminary/LandingGuidance.php`: QUADGUID port with a Newton TTF solver after ROOTPSRS (at most 8 iterations), site frame, gravity compensation, thrust limit, pitch and thrust fraction
+- `src/Guidance/Luminary/GuidanceCommand.php`: result value object of one guidance pass
+- `src/Guidance/Luminary/Throttle.php`: DPS throttle logic (10-60% or 100%, with hysteresis)
+- `src/Scenario/LandingTargets.php`: pad-loaded braking targets, chosen so P63 ends at about 2300 m, plus the TTF at which P63 switches to P64
+- `src/Scenario/StartStates.php`: `LANDING_HORIZONTAL_SPEED` set to the plan's 1690 m/s
+- `src/Agc/Agc.php`: added `?Routine $currentRoutine`
+- `src/Chapter/Landing/LandingChapter.php`: DPS ignites at 10% on start, goes flat out after 26 s, QUADGUID runs every 2 s, switches to P64 and ends `missed`; optional start-state constructor argument for tests
+- `src/Simulation/Simulation.php`: tick response carries `agc.routine` and the P63 and P64 program names
+- `public/assets/views/landing.js`: flame scaled by throttle, fuel bar, throttle readout
+- `public/index.php`: page text no longer says the lander starts without thrust
+- `tests/Guidance/LandingGuidanceTest.php`: TTF convergence, P63 to P64 at 1800-2800 m, ignition then flat out at 26 s, throttle range and fuel
+- `tests/Guidance/ThrottleTest.php`: throttle range and hysteresis
+- `tests/Trace/RoutineTest.php`: routine fields and the QUADGUID url
+- `tests/Chapter/LandingChapterTest.php`: adapted to the powered start state; crash at contact via free fall from 100 m
+- `tests/Simulation/SimulationTest.php`: adapted; routine P63LM at start, `missed` at P64 between 1800 and 2800 m

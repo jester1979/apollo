@@ -17,14 +17,8 @@ final class StartStates
     /** PDI altitude above the lunar surface, in metres (about 50 000 ft). */
     public const LANDING_ALTITUDE = 15240.0;
 
-    /**
-     * Horizontal speed at the start of the landing chapter, in m/s.
-     *
-     * The real PDI speed is about 1690 m/s, but that is the perilune speed of the descent orbit:
-     * without thrust the lander stays in orbit and never falls. Until the braking guidance exists
-     * (slice 2) the chapter starts slower, so the unpowered lander visibly falls to the surface.
-     */
-    public const LANDING_HORIZONTAL_SPEED = 1000.0;
+    /** Horizontal speed at PDI, the perilune speed of the descent orbit, in m/s. */
+    public const LANDING_HORIZONTAL_SPEED = 1690.0;
 
     /** Ground distance from the PDI point to the landing site, in metres (about 260 nautical miles). */
     public const LANDING_SITE_DOWNRANGE = 481000.0;

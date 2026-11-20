@@ -17,14 +17,14 @@ header('Content-Type: text/html; charset=utf-8');
 <body>
     <header class="page-header">
         <h1>Apollo AGC in PHP</h1>
-        <p>Chapter: Landing. The lunar module starts at PDI altitude with no thrust.</p>
+        <p>Chapter: Landing. The lunar module starts powered descent at PDI altitude and brakes with its descent engine.</p>
     </header>
     <main>
         <div class="controls">
             <button type="button" id="start">Start landing</button>
             <span id="status" role="status" aria-live="polite"></span>
         </div>
-        <canvas id="view" width="800" height="500" aria-label="Lunar module descending to the lunar surface"></canvas>
+        <canvas id="view" width="800" height="500" aria-label="Lunar module braking above the lunar surface"></canvas>
         <p id="outcome" class="outcome" role="status" aria-live="polite"></p>
         <noscript>This page needs JavaScript.</noscript>
     </main>

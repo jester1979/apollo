@@ -28,7 +28,8 @@ final class SimulationTest extends TestCase
         self::assertSame([], $response['log']);
         self::assertIsArray($response['dsky']);
         self::assertIsArray($response['agc']);
-        self::assertNull($response['agc']['routine']);
+        self::assertSame('P63LM', $response['agc']['routine']['label']);
+        self::assertSame('P63 – Braking phase', $response['agc']['program']);
         self::assertCount(7, $response['agc']['executive']['coreSets']);
         self::assertCount(5, $response['agc']['executive']['vacAreas']);
         self::assertCount(13, $response['dsky']['lights']);
@@ -50,17 +51,21 @@ final class SimulationTest extends TestCase
         self::assertSame(5, $response['speed']);
     }
 
-    public function testTheOutcomeIsReportedAtContact(): void
+    public function testTheOutcomeIsReportedWhenP63HandsOverToP64(): void
     {
         $simulation = new Simulation();
         $simulation->start(ChapterId::Landing, false);
 
         $response = [];
-        for ($i = 0; $i < 400 && ($response['outcome'] ?? null) === null; $i++) {
+        for ($i = 0; $i < 1000 && ($response['outcome'] ?? null) === null; $i++) {
             $response = $simulation->tick(new TickInput(speed: 10));
         }
 
-        self::assertSame('crashed', $response['outcome']);
+        self::assertSame('missed', $response['outcome']);
+        self::assertSame('P64 – Approach phase', $response['agc']['program']);
+        self::assertSame('STARTP64', $response['agc']['routine']['label']);
+        self::assertGreaterThan(1800.0, $response['vehicle']['altitude']);
+        self::assertLessThan(2800.0, $response['vehicle']['altitude']);
     }
 
     public function testAnUnbuiltChapterIsRefused(): void

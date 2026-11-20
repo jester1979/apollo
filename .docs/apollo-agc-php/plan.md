@@ -508,9 +508,9 @@ Voor slice 1 is `git init` nodig, plus een remote naar `git@github.com:jester197
   - [x] De responseheaders van `/` bevatten de CSP uit §4. De sessiecookie `apollo` heeft `HttpOnly` en `SameSite=Strict`.
   - Guards: invoer alleen via `TickRequest`, met de 10 regels uit §4. Het endpoint is publiek, omdat er geen gebruikersdata is; elke bezoeker heeft zijn eigen sessie. Fouten bevatten geen details. Er is geen bestands- of shelltoegang op basis van invoer.
 - **2. P63-geleiding: de maanlander remt af.** AFK. Blocked by: 1.
-  - [ ] Na start ontsteekt de DPS automatisch (PRO komt in slice 4) en remt de LM af. P63 schakelt naar P64 tussen 1 800 en 2 800 m hoogte; voor nu stopt het hoofdstuk daar met `outcome: "missed"`.
-  - [ ] Het Canvas toont de vlam die meeschaalt met de gasklep, en de brandstofbalk loopt terug.
-  - [ ] `LandingGuidanceTest` (P63-deel en de TTF-convergentie) slaagt.
+  - [x] Na start ontsteekt de DPS automatisch (PRO komt in slice 4) en remt de LM af. P63 schakelt naar P64 tussen 1 800 en 2 800 m hoogte; voor nu stopt het hoofdstuk daar met `outcome: "missed"`.
+  - [x] Het Canvas toont de vlam die meeschaalt met de gasklep, en de brandstofbalk loopt terug.
+  - [x] `LandingGuidanceTest` (P63-deel en de TTF-convergentie) slaagt.
 - **3. De DSKY toont wat de computer doet.** AFK. Blocked by: 2.
   - [ ] Tijdens P63 toont de DSKY PROG 63 en VERB 06 NOUN 63, met R1 de snelheid (ft/s), R2 de stijgsnelheid (ft/s) en R3 de hoogte (ft), opgemaakt volgens `DisplayFormatterTest`.
   - [ ] COMP ACTY licht op als de geleiding rekent.
