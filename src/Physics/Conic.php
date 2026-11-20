@@ -62,6 +62,15 @@ final readonly class Conic
         return $this->eccentricity < 1.0;
     }
 
+    /**
+     * Orbital energy per kilogram relative to the body, in J/kg: negative when bound, zero on the parabola and
+     * positive on a hyperbola. It follows from the shape: mu (e^2 - 1) / (2 p).
+     */
+    public function specificEnergy(): float
+    {
+        return $this->body->mu() * ($this->eccentricity ** 2 - 1.0) / (2.0 * $this->semiLatusRectum);
+    }
+
     /** Radius of the lowest point of the conic, in metres. */
     public function periapsisRadius(): float
     {

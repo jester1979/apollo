@@ -550,8 +550,8 @@ Voor slice 1 is `git init` nodig, plus een remote naar `git@github.com:jester197
   - [x] Het hoofdstuk eindigt in een maanbaan met `success`.
   - [x] `AscentChapterTest` slaagt.
 - **11. Vertrek naar de aarde (TEI, P40).** AFK. Blocked by: 9.
-  - [ ] Na "Trans-Earth injection" volgt hetzelfde P40-verloop als bij LOI, nu prograde. Het bovenaanzicht toont de baan die openbreekt naar een ontsnappingsbaan.
-  - [ ] `TeiChapterTest` slaagt.
+  - [x] Na "Trans-Earth injection" volgt hetzelfde P40-verloop als bij LOI, nu prograde. Het bovenaanzicht toont de baan die openbreekt naar een ontsnappingsbaan.
+  - [x] `TeiChapterTest` slaagt.
 - **12. Terugkeer (P63 t/m P67, CM).** AFK. Blocked by: 8.
   - [ ] Na "Entry" laat het Canvas de CM met een gloed zien die met de weerstand meegroeit, en een bankhoekwijzer. De DSKY wisselt van P63 naar P64 naar P67, met de weergaven uit §8.
   - [ ] Het hoofdstuk eindigt met parachutes en `success`. De maximale belasting blijft onder 12 g.

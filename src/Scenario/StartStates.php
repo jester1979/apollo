@@ -95,6 +95,44 @@ final class StartStates
         );
     }
 
+    /**
+     * The CSM alone, after the LM is left behind, in a circular orbit of 111 km (60 nautical miles) above
+     * the Moon. It flies clockwise in the top view, like the approach of the LOI. The clock of the chapter
+     * starts with the first PRO, and TIG is TEI_COUNTDOWN seconds later.
+     */
+    public const TEI_ORBIT_ALTITUDE = 111000.0;
+
+    /** Seconds from the first PRO to TIG: V06N40 counts these down. */
+    public const TEI_COUNTDOWN = 40;
+
+    /**
+     * The velocity to be gained by the TEI burn, prograde, in m/s (about 3280 ft/s). The escape speed at
+     * 111 km is 2304 m/s and the orbit speed 1629 m/s, so this leaves about 1260 m/s of excess speed.
+     */
+    public const TEI_DELTA_V = 1000.0;
+
+    /** The CSM alone weighs 14.7 t at TEI, of which 5 t is SPS propellant (the burn needs about 4.1 t). */
+    public const TEI_MASS = 14700.0;
+    public const TEI_PROPELLANT = 5000.0;
+
+    public static function teiState(): StateVector
+    {
+        $radius = Body::Moon->radius() + self::TEI_ORBIT_ALTITUDE;
+
+        return new StateVector(0.0, $radius, sqrt(Body::Moon->mu() / $radius), 0.0);
+    }
+
+    /** The CSM alone, SPS off. The pitch is set by the chapter. */
+    public static function teiVehicle(): Vehicle
+    {
+        return new Vehicle(
+            mass: self::TEI_MASS,
+            dryMass: self::TEI_MASS - self::TEI_PROPELLANT,
+            maxThrust: self::SPS_THRUST,
+            isp: self::SPS_ISP,
+        );
+    }
+
     public static function landingState(): StateVector
     {
         return new StateVector(0.0, Body::Moon->radius() + self::LANDING_ALTITUDE, self::LANDING_HORIZONTAL_SPEED, 0.0);

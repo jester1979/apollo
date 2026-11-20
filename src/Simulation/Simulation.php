@@ -10,6 +10,7 @@ use Apollo\Chapter\ChapterId;
 use Apollo\Chapter\Landing\LandingChapter;
 use Apollo\Chapter\Launch\LaunchChapter;
 use Apollo\Chapter\Loi\LoiChapter;
+use Apollo\Chapter\Tei\TeiChapter;
 use Apollo\Physics\Integrator;
 
 /**
@@ -32,6 +33,7 @@ class Simulation
             ChapterId::LunarOrbitInsertion => new LoiChapter(),
             ChapterId::Landing => new LandingChapter(null, $scenario),
             ChapterId::Ascent => new AscentChapter(),
+            ChapterId::TransEarthInjection => new TeiChapter(),
             default => throw new ChapterNotAvailable(),
         };
         $this->scenario = $scenario;

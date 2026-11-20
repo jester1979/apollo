@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Apollo\Chapter\Loi;
+namespace Apollo\Chapter\Burn;
 
 /** Where a P40 chapter is: the checklist, the coast to TIG, the burn, or finished. */
 enum BurnPhase

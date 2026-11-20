@@ -76,4 +76,14 @@ final class ConicTest extends TestCase
 
         self::assertSame([], (new Conic($state, Body::Moon))->path(50, 3.0e6));
     }
+
+    public function testTheSpecificEnergyMatchesTheVisVivaEnergyForBoundAndOpenOrbits(): void
+    {
+        foreach ([1500.0, 1671.0, 2304.0, 2700.0] as $speed) {
+            $state = new StateVector(0.0, self::PERILUNE_RADIUS, $speed, 0.0);
+            $expected = $speed ** 2 / 2.0 - Body::Moon->mu() / self::PERILUNE_RADIUS;
+
+            self::assertEqualsWithDelta($expected, (new Conic($state, Body::Moon))->specificEnergy(), abs($expected) * 1e-9 + 1e-3);
+        }
+    }
 }

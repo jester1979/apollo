@@ -255,3 +255,19 @@ The builder of slice 7 reported that a landing with PRO at about t=20 s ended `c
 - `tests/Guidance/AscentGuidanceTest.php`: vertical rise, rise exit, a full burn to the target orbit
 - `tests/Dsky/DskyTest.php`, `tests/Dsky/NounTableTest.php`, `tests/Trace/RoutineTest.php`: PRO on a flashing V06, N74 and N76, ascent routines
 - `tests/Http/ApiControllerTest.php`, `tests/Simulation/SimulationTest.php`: the unbuilt-chapter tests now use `tei`
+
+### 11. Vertrek naar de aarde (TEI, P40)
+
+`vendor/bin/phpunit` passed with 311 tests and 50813 assertions, including the 24 tests of `TeiChapterTest`, and `vendor/bin/phpstan analyse` reported no errors. `LoiChapterTest` was not edited and still passes after the P40 flow moved to a shared base class. In Chrome, "Trans-Earth injection" started with 40/50/25 and `+00203` and a closed dashed circle at 111 km. After the two PROs the burn ran with a flame; the apolune of the dashed path grew from 291 km at t=47 s to 13 612 km at t=122 s, and at t=178.8 s the path was an open arc, the DSKY showed V16N40 and the page showed "Outcome: success". In tests a V99 PRO up to 54 s late ends in success and a missing PRO ends `missed`. LOI, re-checked through the page, still ended in success at 93.7 km × 262 km.
+
+- `src/Chapter/Burn/P40BurnChapter.php`: abstract base with the P40 flow taken from `LoiChapter`; subclasses supply start state, vehicle, `BurnSpec` and `judge()`
+- `src/Chapter/Burn/BurnSpec.php`: what differs per chapter (delta-V, prograde flag, countdown, view extent, burn name, start log line)
+- `src/Chapter/Burn/BurnPhase.php`: moved here from `src/Chapter/Loi/BurnPhase.php`, which is deleted
+- `src/Chapter/Loi/LoiChapter.php`: reduced to a subclass; texts and behaviour unchanged
+- `src/Chapter/Tei/TeiChapter.php`: CM chapter, P40 prograde with the CSM alone in a 111 km orbit; success at positive energy relative to the Moon
+- `src/Physics/Conic.php`: `specificEnergy()` for the TEI judgement
+- `src/Scenario/StartStates.php`: TEI constants (111 km orbit, 40 s countdown, 1000 m/s ΔV, 14 700 kg CSM with 5 000 kg propellant)
+- `src/Simulation/Simulation.php`: `start()` builds `TeiChapter`
+- `tests/Chapter/TeiChapterTest.php`: the P40 flow, success at 1×, late PROs, no PRO, P00 mid-burn, all CM nouns keyable, serialization
+- `tests/Physics/ConicTest.php`: `specificEnergy()` against the vis-viva energy
+- `tests/Simulation/SimulationTest.php`, `tests/Http/ApiControllerTest.php`: the unbuilt-chapter tests now use `entry`
