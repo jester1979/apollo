@@ -7,6 +7,7 @@ namespace Apollo\Simulation;
 use Apollo\Chapter\Chapter;
 use Apollo\Chapter\ChapterId;
 use Apollo\Chapter\Landing\LandingChapter;
+use Apollo\Chapter\Launch\LaunchChapter;
 use Apollo\Physics\Integrator;
 
 /**
@@ -25,6 +26,7 @@ class Simulation
     public function start(ChapterId $id, bool $scenario): array
     {
         $this->chapter = match ($id) {
+            ChapterId::Launch => new LaunchChapter(),
             ChapterId::Landing => new LandingChapter(null, $scenario),
             default => throw new ChapterNotAvailable(),
         };
@@ -76,15 +78,19 @@ class Simulation
             'vehicle' => $chapter->vehicleView(),
             'agc' => [
                 'routine' => $agc->currentRoutine?->toArray(),
-                'program' => $this->programName($agc->majorMode),
+                'program' => $this->programName($chapter->id(), $agc->majorMode),
                 'executive' => $agc->executive->snapshot(),
             ],
             'log' => $agc->log->takeNew(),
         ];
     }
 
-    private function programName(int $majorMode): string
+    private function programName(ChapterId $chapter, int $majorMode): string
     {
+        if ($chapter === ChapterId::Launch && $majorMode === 11) {
+            return 'P11 – Earth orbit insertion monitor (the Saturn V is flown by the LVDC, whose code is not in the source)';
+        }
+
         return match ($majorMode) {
             0 => 'P00 – No guidance (free fall)',
             63 => 'P63 – Braking phase',

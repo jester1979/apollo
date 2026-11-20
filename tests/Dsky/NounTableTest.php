@@ -42,4 +42,20 @@ final class NounTableTest extends TestCase
         self::assertNotNull($noun);
         self::assertSame(Format::MinutesSeconds, $noun->components[1]->format);
     }
+
+    public function testNoun62OfTheCmIsInertialVelocityAltitudeRateAndAltitudeAbovePadRadius(): void
+    {
+        $noun = NounTable::for(Computer::Cm)->find(62);
+
+        self::assertNotNull($noun);
+        self::assertSame(
+            [
+                [Unit::FeetPerSecond, Format::Whole],
+                [Unit::FeetPerSecond, Format::Whole],
+                [Unit::NauticalMiles, Format::Decimal1],
+            ],
+            array_map(static fn ($component) => [$component->unit, $component->format], $noun->components),
+        );
+        self::assertNull(NounTable::for(Computer::Lm)->find(62));
+    }
 }

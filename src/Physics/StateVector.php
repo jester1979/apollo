@@ -48,4 +48,19 @@ final readonly class StateVector
     {
         return atan2($this->x, $this->y);
     }
+
+    /**
+     * Altitude of the lowest point of the conic the vehicle follows when the engine stays off, in
+     * metres above the surface. It is negative when that orbit hits the body, and it is valid for
+     * ellipses and for escape orbits alike: the periapsis radius is p / (1 + e) with p = h^2 / mu.
+     */
+    public function perigeeAltitude(Body $body): float
+    {
+        $mu = $body->mu();
+        $angularMomentum = $this->x * $this->vy - $this->y * $this->vx;
+        $energy = ($this->vx ** 2 + $this->vy ** 2) / 2.0 - $mu / $this->radius();
+        $eccentricity = sqrt(max(0.0, 1.0 + 2.0 * $energy * $angularMomentum ** 2 / ($mu * $mu)));
+
+        return $angularMomentum ** 2 / $mu / (1.0 + $eccentricity) - $body->radius();
+    }
 }

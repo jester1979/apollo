@@ -130,7 +130,7 @@ final class SimulationTest extends TestCase
     {
         $this->expectException(ChapterNotAvailable::class);
 
-        (new Simulation())->start(ChapterId::Launch, false);
+        (new Simulation())->start(ChapterId::LunarOrbitInsertion, false);
     }
 
     public function testTickBeforeStartIsALogicError(): void

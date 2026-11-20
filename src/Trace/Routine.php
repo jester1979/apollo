@@ -42,6 +42,8 @@ enum Routine
     case NoVac;        // Luminary099/EXECUTIVE.agc:155 (NOVAC2)
     case Bailout;      // Luminary099/ALARM_AND_ABORT.agc:133
     case GoProg;       // Luminary099/FRESH_START_AND_RESTART.agc:206
+    case P11;          // Comanche055/P11.agc:158
+    case Vhhdot;       // Comanche055/P11.agc:409
 
     public const COMMIT = 'e7576d50f7c279a707cfaa71be2020592dbf43a8';
 
@@ -79,6 +81,8 @@ enum Routine
             self::NoVac => 'NOVAC2',
             self::Bailout => 'BAILOUT',
             self::GoProg => 'GOPROG',
+            self::P11 => 'P11',
+            self::Vhhdot => 'VHHDOT',
         };
     }
 
@@ -96,6 +100,7 @@ enum Routine
             self::V37, self::V37NoNo, self::GoProg => 'Luminary099/FRESH_START_AND_RESTART.agc',
             self::FindVac, self::NoVac => 'Luminary099/EXECUTIVE.agc',
             self::Bailout => 'Luminary099/ALARM_AND_ABORT.agc',
+            self::P11, self::Vhhdot => 'Comanche055/P11.agc',
         };
     }
 
@@ -133,6 +138,8 @@ enum Routine
             self::NoVac => 155,
             self::Bailout => 133,
             self::GoProg => 206,
+            self::P11 => 158,
+            self::Vhhdot => 409,
         };
     }
 

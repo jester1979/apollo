@@ -71,10 +71,13 @@ final readonly class NounTable
     private static function cm(): self
     {
         $octal = new NounComponent(Unit::None, Format::Octal);
+        $velocity = new NounComponent(Unit::FeetPerSecond, Format::Whole);
 
         return new self(
             // 09: alarm codes, octal only for each.
             new Noun(9, $octal, $octal, $octal),
+            // 62: inertial velocity magnitude (VI), altitude rate change (HDOT), altitude above pad radius (H).
+            new Noun(62, $velocity, $velocity, new NounComponent(Unit::NauticalMiles, Format::Decimal1)),
         );
     }
 }

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Apollo\Physics;
 
-/** RK4 integration of gravity and engine thrust, with fuel consumption. */
+/**
+ * RK4 integration of gravity, engine thrust and drag in the atmosphere (if the body has one and the
+ * vehicle has a drag area), with fuel consumption. The air turns with the body.
+ */
 final class Integrator
 {
     /** Fixed physics step in seconds. */
@@ -28,11 +31,12 @@ final class Integrator
         }
         $mass = $vehicle->mass - $burn / 2.0;
         $thrustAcceleration = $thrust / $mass;
+        $dragPerKilogram = $vehicle->dragArea / $mass;
 
-        $k1 = $this->derivative($state, $body, $thrustAcceleration, $vehicle->pitch);
-        $k2 = $this->derivative($this->advance($state, $k1, $dt / 2.0), $body, $thrustAcceleration, $vehicle->pitch);
-        $k3 = $this->derivative($this->advance($state, $k2, $dt / 2.0), $body, $thrustAcceleration, $vehicle->pitch);
-        $k4 = $this->derivative($this->advance($state, $k3, $dt), $body, $thrustAcceleration, $vehicle->pitch);
+        $k1 = $this->derivative($state, $body, $thrustAcceleration, $vehicle->pitch, $dragPerKilogram);
+        $k2 = $this->derivative($this->advance($state, $k1, $dt / 2.0), $body, $thrustAcceleration, $vehicle->pitch, $dragPerKilogram);
+        $k3 = $this->derivative($this->advance($state, $k2, $dt / 2.0), $body, $thrustAcceleration, $vehicle->pitch, $dragPerKilogram);
+        $k4 = $this->derivative($this->advance($state, $k3, $dt), $body, $thrustAcceleration, $vehicle->pitch, $dragPerKilogram);
 
         $vehicle->mass -= $burn;
 
@@ -58,10 +62,16 @@ final class Integrator
     }
 
     /**
+     * @param float $dragPerKilogram drag area / mass in m^2/kg
      * @return array{float, float, float, float} dx/dt, dy/dt, dvx/dt, dvy/dt
      */
-    private function derivative(StateVector $state, Body $body, float $thrustAcceleration, float $pitch): array
-    {
+    private function derivative(
+        StateVector $state,
+        Body $body,
+        float $thrustAcceleration,
+        float $pitch,
+        float $dragPerKilogram,
+    ): array {
         $r = $state->radius();
         $gravity = -$body->mu() / ($r * $r * $r);
 
@@ -71,11 +81,34 @@ final class Integrator
         $horizontalX = $upY;
         $horizontalY = -$upX;
 
+        [$dragX, $dragY] = $this->dragAcceleration($state, $body, $dragPerKilogram);
+
         return [
             $state->vx,
             $state->vy,
-            $gravity * $state->x + $thrustAcceleration * (cos($pitch) * $horizontalX + sin($pitch) * $upX),
-            $gravity * $state->y + $thrustAcceleration * (cos($pitch) * $horizontalY + sin($pitch) * $upY),
+            $gravity * $state->x + $thrustAcceleration * (cos($pitch) * $horizontalX + sin($pitch) * $upX) + $dragX,
+            $gravity * $state->y + $thrustAcceleration * (cos($pitch) * $horizontalY + sin($pitch) * $upY) + $dragY,
         ];
+    }
+
+    /**
+     * Drag acceleration: 1/2 * rho * v^2 * (Cd*A / m) against the velocity relative to the air, which
+     * turns with the body at its rotation rate (clockwise, like the horizontal of StateVector).
+     *
+     * @return array{float, float}
+     */
+    private function dragAcceleration(StateVector $state, Body $body, float $dragPerKilogram): array
+    {
+        $atmosphere = $body->atmosphere();
+        if ($atmosphere === null || $dragPerKilogram <= 0.0) {
+            return [0.0, 0.0];
+        }
+
+        $rotation = $body->rotationRate();
+        $relativeX = $state->vx - $rotation * $state->y;
+        $relativeY = $state->vy + $rotation * $state->x;
+        $factor = -0.5 * $atmosphere->density($state->altitude($body)) * $dragPerKilogram * hypot($relativeX, $relativeY);
+
+        return [$factor * $relativeX, $factor * $relativeY];
     }
 }

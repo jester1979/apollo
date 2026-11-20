@@ -1,14 +1,26 @@
 import { createCodePanel } from './codepanel.js';
 import { createDsky } from './dsky.js';
 import { render as renderLanding } from './views/landing.js';
+import { render as renderLaunch } from './views/launch.js';
 
 const API_URL = '/api.php';
 const TICK_INTERVAL_MS = 100;
 
-const views = { landing: renderLanding };
+const views = { landing: renderLanding, launch: renderLaunch };
+
+// What the canvas shows for each view, for assistive technology.
+const VIEW_LABELS = {
+    landing: 'Lunar module braking above the lunar surface',
+    launch: 'Saturn V climbing to orbit, side view',
+};
+
+// The Apollo 11 scenario applies to the landing only; the API refuses it for the other chapters.
+const SCENARIO_CHAPTER = 'landing';
 
 const startButton = document.getElementById('start');
+const chooser = document.getElementById('chooser');
 const scenarioSwitch = document.getElementById('scenario');
+const scenarioLabel = document.getElementById('scenario-label');
 const statusLine = document.getElementById('status');
 const outcomeLine = document.getElementById('outcome');
 const canvas = document.getElementById('view');
@@ -54,6 +66,24 @@ document.addEventListener('keydown', (event) => {
 
 let runId = 0;
 
+function selectedChapter() {
+    const checked = chooser.querySelector('input[name="chapter"]:checked');
+
+    return checked ? checked.value : 'launch';
+}
+
+// The scenario switch is for the landing: elsewhere it is off and disabled, and while a run is going too.
+function updateScenarioSwitch() {
+    const available = !running && selectedChapter() === SCENARIO_CHAPTER;
+    if (selectedChapter() !== SCENARIO_CHAPTER) {
+        scenarioSwitch.checked = false;
+    }
+    scenarioSwitch.disabled = !available;
+    scenarioLabel.classList.toggle('is-disabled', !available);
+}
+
+chooser.addEventListener('change', updateScenarioSwitch);
+
 async function post(payload) {
     const response = await fetch(API_URL, {
         method: 'POST',
@@ -69,10 +99,16 @@ async function post(payload) {
         throw new Error('Unexpected response from the server');
     }
     if (!response.ok) {
-        throw new Error(typeof data.error === 'string' ? data.error : 'Request failed');
+        const failure = new Error(typeof data.error === 'string' ? data.error : 'Request failed');
+        failure.status = response.status;
+        throw failure;
     }
 
     return data;
+}
+
+function formatAltitude(metres) {
+    return metres >= 10000 ? `${(metres / 1000).toFixed(1)} km` : `${metres.toFixed(0)} m`;
 }
 
 function show(state) {
@@ -80,9 +116,10 @@ function show(state) {
     if (view) {
         view(ctx, state.vehicle, state.t);
     }
+    canvas.setAttribute('aria-label', VIEW_LABELS[state.vehicle.view] ?? 'Vehicle view');
     dsky.render(state.dsky);
     codePanel.update(state.agc, state.log);
-    statusLine.textContent = `t = ${state.t.toFixed(1)} s · altitude ${state.vehicle.altitude.toFixed(0)} m`;
+    statusLine.textContent = `t = ${state.t.toFixed(1)} s · altitude ${formatAltitude(state.vehicle.altitude)}`;
     if (state.outcome !== null) {
         outcomeLine.dataset.outcome = state.outcome;
         outcomeLine.textContent = `Outcome: ${state.outcome}`;
@@ -95,11 +132,14 @@ function delay(ms) {
 
 async function run() {
     const myRun = ++runId;
+    const chapter = selectedChapter();
+    const scenario = chapter === SCENARIO_CHAPTER && scenarioSwitch.checked;
     startButton.disabled = true;
-    scenarioSwitch.disabled = true;
+    chooser.disabled = true;
     pendingKeys.length = 0;
     pendingRod = 0;
     running = true;
+    updateScenarioSwitch();
     dsky.setEnabled(true);
     outcomeLine.textContent = '';
     delete outcomeLine.dataset.outcome;
@@ -107,7 +147,8 @@ async function run() {
     statusLine.textContent = 'Starting…';
 
     try {
-        let state = await post({ action: 'start', chapter: 'landing', scenario: scenarioSwitch.checked });
+        let state = await post({ action: 'start', chapter, scenario });
+        startButton.textContent = 'Start again';
         show(state);
 
         // One tick in flight at a time: await the answer, render, then wait.
@@ -124,16 +165,20 @@ async function run() {
             show(state);
         }
     } catch (error) {
-        statusLine.textContent = `Error: ${error.message}`;
+        // 501: the API knows the chapter but it is not built yet.
+        statusLine.textContent = error.status === 501
+            ? 'This chapter is not available yet.'
+            : `Error: ${error.message}`;
     } finally {
         if (myRun === runId) {
             running = false;
             dsky.setEnabled(false);
         }
         startButton.disabled = false;
-        scenarioSwitch.disabled = false;
-        startButton.textContent = 'Start again';
+        chooser.disabled = false;
+        updateScenarioSwitch();
     }
 }
 
 startButton.addEventListener('click', run);
+updateScenarioSwitch();

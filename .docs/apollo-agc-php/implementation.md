@@ -174,3 +174,32 @@ Verified by two builders. `vendor/bin/phpunit` passed with 62 tests and 2882 ass
 - `tests/Agc/ExecutiveTest.php`: 1202 on the 8th `novac`, 1201 on the 6th `findvac`, bailout, priority order, cycle steal, serialization
 - `tests/Chapter/LandingScenarioTest.php`: no alarms without the scenario; with it an alarm in P63 or P64, PROG lit, V05N09 showing the code, landing success
 - `tests/Trace/RoutineTest.php`: labels, files and lines of the four Executive routines
+
+### 8. Hoofdstukkiezer en het lanceringshoofdstuk
+
+`vendor/bin/phpunit` passed with 189 tests and 30217 assertions, including `LaunchChapterTest` with a full 1× flight to `Outcome::Success`, and `vendor/bin/phpstan analyse` reported no errors. The landing tests were not changed and still pass. In Chrome the page showed a chooser with six chapters. Launch, started through it, showed the Saturn V rising at T=18.8 s, the S-IC falling away at T=166.6 s and the S-II separated at T=529.5 s. The DSKY showed PROG 11 with V06N62, and the code panel showed "VHHDOT · Comanche055/P11.agc:409" with the program line saying the LVDC flew the rocket and its code is not in the source. The chapter ended at t=675.6 s with a perigee of 185 km and "Outcome: success". Landing started through the chooser with the scenario on and reached `success`. LOI returned 501 and the page showed "This chapter is not available yet." The browser run was advanced with ticks at speed 10; the 1× run is covered by the test.
+
+- `src/Physics/ExponentialAtmosphere.php`: density model ρ0·exp(−h/H), used for drag
+- `src/Physics/Body.php`: `atmosphere()` (Earth only) and `rotationRate()`, so the air turns with the Earth
+- `src/Physics/Vehicle.php`: optional `dragArea` (Cd·A in m²), default 0
+- `src/Physics/Integrator.php`: drag against the co-rotating air when the body has an atmosphere; the Moon path is unchanged
+- `src/Physics/StateVector.php`: `perigeeAltitude(Body)` for the orbit check
+- `src/Physics/SaturnStage.php`: enum SIC, SII, SIVB
+- `src/Physics/SaturnV.php`: three-stage stack with a fixed pitch programme, staging and cut-off; the docblock says it is not a port
+- `src/Scenario/StartStates.php`: launch state and rounded Saturn V stage data, 185 km parking orbit
+- `src/Guidance/Comanche/LaunchMonitor.php`: VHHDOT display values for N62 every 2 s
+- `src/Chapter/Launch/LaunchChapter.php`: CM chapter with P11 from lift-off, V06N62, staging and cut-off events, Success or Missed
+- `src/Trace/Routine.php`: cases P11 and Vhhdot, line numbers checked against the source
+- `src/Dsky/NounTable.php`: CM N62 (VI and HDOT in ft/s, H in nmi) from Comanche055's noun list
+- `src/Simulation/Simulation.php`: `start()` builds `LaunchChapter`; the program name depends on the chapter
+- `public/index.php`: chapter chooser with six radio buttons
+- `public/assets/app.js`: start uses the chosen chapter; the scenario is sent only for landing; a 501 shows "This chapter is not available yet."
+- `public/assets/views/launch.js`: Saturn V silhouette, pitch tilt, flames per stage, S-IC and S-II falling away
+- `public/assets/style.css`: styles for the chooser and the dimmed scenario switch
+- `tests/Chapter/LaunchChapterTest.php`: 13 tests, including the full flight to success and staging in the view
+- `tests/Physics/SaturnVTest.php`: stack mass, pitch table, staging order, cut-off
+- `tests/Physics/StateVectorTest.php`: perigee for circular, elliptical, falling and escape orbits
+- `tests/Physics/IntegratorTest.php`: drag test and an Earth atmosphere test
+- `tests/Dsky/NounTableTest.php`: CM N62
+- `tests/Trace/RoutineTest.php`: P11 and VHHDOT point at their file and line
+- `tests/Simulation/SimulationTest.php`, `tests/Http/ApiControllerTest.php`: the unbuilt-chapter tests now use LOI

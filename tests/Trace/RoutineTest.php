@@ -90,6 +90,22 @@ final class RoutineTest extends TestCase
         self::assertSame([], $lines, 'every Executive routine is a case');
     }
 
+    public function testTheLabelsOfTheLaunchRoutinesPointAtTheirLines(): void
+    {
+        $lines = [
+            'P11' => ['Comanche055/P11.agc', 158],
+            'VHHDOT' => ['Comanche055/P11.agc', 409],
+        ];
+        foreach (Routine::cases() as $routine) {
+            if (isset($lines[$routine->label()])) {
+                self::assertSame($lines[$routine->label()], [$routine->file(), $routine->line()], $routine->label());
+                unset($lines[$routine->label()]);
+            }
+        }
+
+        self::assertSame([], $lines, 'every launch routine is a case');
+    }
+
     public function testNoTwoRoutinesShareALabel(): void
     {
         $labels = array_map(static fn (Routine $routine): string => $routine->label(), Routine::cases());

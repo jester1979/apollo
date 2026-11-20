@@ -536,10 +536,10 @@ Voor slice 1 is `git init` nodig, plus een remote naar `git@github.com:jester197
   - [x] Het codepaneel toont 7 core sets en 5 VAC-gebieden met de jobnamen, en die lopen vol vlak voor een alarm.
   - [x] `ExecutiveTest` en `LandingScenarioTest` slagen.
 - **8. Hoofdstukkiezer en het lanceringshoofdstuk.** AFK. Blocked by: 5.
-  - [ ] De pagina toont een kiezer met de zes hoofdstukken. Kies je "Launch", dan stijgt de Saturn V op het Canvas en laten S-IC en S-II zichtbaar los.
-  - [ ] De DSKY toont P11 met V06N62 (VI, HDOT, H). Het codepaneel toont `VHHDOT` en zegt dat de raket zelf door de LVDC werd gestuurd, die niet in de bron zit.
-  - [ ] Het hoofdstuk eindigt in een baan met `outcome: "success"`.
-  - [ ] `LaunchChapterTest` slaagt. Het landingshoofdstuk is ook via de kiezer te starten.
+  - [x] De pagina toont een kiezer met de zes hoofdstukken. Kies je "Launch", dan stijgt de Saturn V op het Canvas en laten S-IC en S-II zichtbaar los.
+  - [x] De DSKY toont P11 met V06N62 (VI, HDOT, H). Het codepaneel toont `VHHDOT` en zegt dat de raket zelf door de LVDC werd gestuurd, die niet in de bron zit.
+  - [x] Het hoofdstuk eindigt in een baan met `outcome: "success"`.
+  - [x] `LaunchChapterTest` slaagt. Het landingshoofdstuk is ook via de kiezer te starten.
 - **9. Intrede in de maanbaan (LOI, P40).** AFK. Blocked by: 8.
   - [ ] Na het kiezen van "Lunar orbit insertion" volgt V50N25 R1=00203. PRO geeft V06N40 met aftellen, vanaf TIG−5 s knippert V99N40, en PRO start de branding.
   - [ ] Het bovenaanzicht toont de baan die tijdens de branding van hyperbool naar ellips buigt. Na de branding toont de DSKY V16N40.
