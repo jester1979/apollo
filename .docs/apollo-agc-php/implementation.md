@@ -297,3 +297,20 @@ Verified by two builders. `vendor/bin/phpunit` passed with 339 tests and 51669 a
 - `tests/Physics/IntegratorTest.php`: lift magnitude, direction and cos(bank) scaling
 - `tests/Trace/RoutineTest.php`, `tests/Dsky/NounTableTest.php`, `tests/Dsky/DskyTest.php`: entry routines and nouns; the unknown-noun case for the CM uses N68
 - `tests/Simulation/SimulationTest.php`, `tests/Http/ApiControllerTest.php`: every chapter can be started
+
+### 13. Tussenstukken, missieverloop, tijdversnelling en README
+
+`vendor/bin/phpunit` passed with 354 tests and `vendor/bin/phpstan analyse` reported no errors. In Chrome, with real clicks, the mission clock in V16N65 ran 0.80 simulated seconds per wall second at 1×, 1.6 at 2×, 3.83 at 5× and 8.0 at 10×. Launch at 10× ended in success and "Next chapter" appeared; the button played the interlude "Trans-lunar injection and coast" and LOI started on its own. The builder then flew the whole chain with a PRO at each first V99: LOI, "Undocking and descent orbit", Landing, "On the surface", Ascent, "Rendezvous and docking", TEI, "Coast back to Earth", Entry. Entry ended in success and the page showed "Mission complete" with the button hidden. The logs of the 10× runs kept their events. The console showed no messages, and the page requests `/assets/favicon.svg` (200) and no longer `/favicon.ico`.
+
+- `src/Chapter/Interlude.php`: interlude titles per transition and `nextAfter()`, which builds the `next` object only after a success with a successor
+- `src/Simulation/Simulation.php`: the response carries `next`
+- `src/Dsky/NounTable.php`: LM noun 65 (AGC time in hours, minutes, seconds) from Luminary099's noun list
+- `src/Chapter/Landing/LandingChapter.php`, `src/Chapter/Ascent/AscentChapter.php`, `src/Chapter/Launch/LaunchChapter.php`, `src/Chapter/Burn/P40BurnChapter.php`: noun 65 shows the chapter's mission clock
+- `public/assets/views/interlude.js`: Canvas animation of 4.5 s with the title above, one scene per next chapter
+- `public/assets/app.js`: speed buttons set the tick's `speed`; "Next chapter" plays the interlude and starts the next chapter; "Mission complete" after Entry
+- `public/index.php`: speed buttons, "Next chapter" button, "Mission complete" element, favicon link
+- `public/assets/style.css`: styles for those elements
+- `public/assets/favicon.svg`: favicon
+- `tests/Chapter/InterludeTest.php`: the 5 titles and next chapters, no `next` for Entry or a non-success, N65 as the mission clock in all six chapters
+- `tests/Simulation/SimulationTest.php`: the response key list includes `next`
+- `README.md`: source and licences, install and start, page controls, keys, the six chapters, tests and limits

@@ -402,3 +402,38 @@ canvas {
     cursor: default;
     opacity: 0.5;
 }
+
+.speed {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+}
+
+.speed-label {
+    margin-right: 0.4rem;
+    color: #9aa4ad;
+}
+
+.speed-button {
+    padding: 0.35rem 0.9rem;
+}
+
+.speed-button[aria-pressed="true"] {
+    border-color: #6be38c;
+    background: #1f4a2d;
+    font-weight: 700;
+}
+
+.next-chapter {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.mission-complete {
+    margin: 0;
+    color: #6be38c;
+    font-size: 1.5rem;
+    font-weight: 700;
+}

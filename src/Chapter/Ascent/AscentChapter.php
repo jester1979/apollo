@@ -565,6 +565,8 @@ final class AscentChapter implements Chapter
             63 => [hypot($horizontal, $radial), $radial, $altitude],
             // 64: time left for redesignation (none in ascent), altitude rate, computed altitude.
             64 => [0.0, $radial, $altitude],
+            // 65: sampled AGC time in hours, minutes and seconds: the mission clock of this chapter.
+            65 => [$this->agc->missionTime, $this->agc->missionTime, $this->agc->missionTime],
             // 68: slant range to the landing site, time to go in braking phase (none), LR altitude difference (no radar).
             68 => [hypot(Body::Moon->radius() * $this->state->angle(), $altitude), 0.0, 0.0],
             // 74: time from ignition, yaw after vehicle rise (no cross-range), pitch after vehicle rise.

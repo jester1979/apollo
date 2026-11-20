@@ -65,6 +65,13 @@ final readonly class NounTable
             new Noun(63, $velocity, $velocity, $altitude),
             // 64: time left for redesignation, altitude rate, computed altitude.
             new Noun(64, $minutesSeconds, $velocity, $altitude),
+            // 65: sampled AGC time: hours 00xxx., minutes 000xx., seconds 0xx.xx (Luminary099 noun 65).
+            new Noun(
+                65,
+                new NounComponent(Unit::Seconds, Format::Hours),
+                new NounComponent(Unit::Seconds, Format::Minutes),
+                new NounComponent(Unit::Seconds, Format::Seconds),
+            ),
             // 68: slant range to landing site, time to go in braking phase, LR altitude minus computed altitude.
             new Noun(68, $nauticalMiles, $minutesSeconds, $altitude),
             // 74: time from ignition (xxBxx min/sec), yaw after vehicle rise, pitch after vehicle rise (xxx.xx deg).

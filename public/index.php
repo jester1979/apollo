@@ -12,6 +12,7 @@ header('Content-Type: text/html; charset=utf-8');
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Apollo AGC in PHP</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
@@ -37,12 +38,23 @@ header('Content-Type: text/html; charset=utf-8');
             </label>
             <span id="status" role="status" aria-live="polite"></span>
         </div>
+        <div class="speed" id="speed" role="group" aria-label="Simulation speed">
+            <span class="speed-label">Speed</span>
+            <button type="button" class="speed-button" data-speed="1" aria-pressed="true">1×</button>
+            <button type="button" class="speed-button" data-speed="2" aria-pressed="false">2×</button>
+            <button type="button" class="speed-button" data-speed="5" aria-pressed="false">5×</button>
+            <button type="button" class="speed-button" data-speed="10" aria-pressed="false">10×</button>
+        </div>
         <div class="stage">
             <canvas id="view" width="800" height="500" aria-label="Vehicle view: start a chapter to see it"></canvas>
             <section id="dsky" class="dsky" aria-label="DSKY of the active computer"></section>
         </div>
         <section id="codepanel" class="codepanel" aria-label="Code panel: the running AGC routine and the log"></section>
         <p id="outcome" class="outcome" role="status" aria-live="polite"></p>
+        <div class="next-chapter">
+            <button type="button" id="next" hidden>Next chapter</button>
+            <p id="mission-complete" class="mission-complete" role="status" aria-live="polite" hidden>Mission complete</p>
+        </div>
         <noscript>This page needs JavaScript.</noscript>
     </main>
     <script type="module" src="/assets/app.js"></script>

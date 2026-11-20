@@ -19,7 +19,7 @@ final class SimulationTest extends TestCase
         $response = $simulation->start(ChapterId::Landing, false);
 
         self::assertSame(
-            ['chapter', 'computer', 't', 'speed', 'outcome', 'dsky', 'vehicle', 'agc', 'log'],
+            ['chapter', 'computer', 't', 'speed', 'outcome', 'next', 'dsky', 'vehicle', 'agc', 'log'],
             array_keys($response),
         );
         self::assertSame('landing', $response['chapter']);

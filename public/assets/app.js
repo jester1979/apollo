@@ -2,6 +2,7 @@ import { createCodePanel } from './codepanel.js';
 import { createDsky } from './dsky.js';
 import { render as renderAscent } from './views/ascent.js';
 import { render as renderEntry } from './views/entry.js';
+import { DURATION_MS as INTERLUDE_MS, render as renderInterlude } from './views/interlude.js';
 import { render as renderLanding } from './views/landing.js';
 import { render as renderLaunch } from './views/launch.js';
 import { render as renderOrbit } from './views/orbit.js';
@@ -22,6 +23,9 @@ const VIEW_LABELS = {
     orbit: 'Command and service module near the Moon, top view, with the path flown and the path predicted',
 };
 
+// The chapter that ends the mission: a success there shows "Mission complete".
+const LAST_CHAPTER = 'entry';
+
 // The Apollo 11 scenario applies to the landing only; the API refuses it for the other chapters.
 const SCENARIO_CHAPTER = 'landing';
 
@@ -31,6 +35,9 @@ const scenarioSwitch = document.getElementById('scenario');
 const scenarioLabel = document.getElementById('scenario-label');
 const statusLine = document.getElementById('status');
 const outcomeLine = document.getElementById('outcome');
+const speedGroup = document.getElementById('speed');
+const nextButton = document.getElementById('next');
+const missionComplete = document.getElementById('mission-complete');
 const canvas = document.getElementById('view');
 const ctx = canvas.getContext('2d');
 
@@ -45,6 +52,12 @@ const pendingKeys = [];
 // ROD clicks since the last tick: arrow up is +1 (less descent rate), arrow down -1 (more).
 let pendingRod = 0;
 let running = false;
+// The simulation speed the next tick asks for: 1, 2, 5 or 10 (the server validates it again).
+let speed = 1;
+// What the server offered after the last successful chapter: {chapter, interlude}, or null.
+let nextOffer = null;
+let interludePlaying = false;
+const INTERLUDE_FRAME_MS = 33;
 
 const dsky = createDsky(document.getElementById('dsky'), (name) => {
     if (running) {
@@ -73,6 +86,18 @@ document.addEventListener('keydown', (event) => {
 });
 
 let runId = 0;
+
+speedGroup.addEventListener('click', (event) => {
+    const button = event.target instanceof Element ? event.target.closest('.speed-button') : null;
+    const chosen = button ? Number(button.dataset.speed) : 0;
+    if (![1, 2, 5, 10].includes(chosen)) {
+        return;
+    }
+    speed = chosen;
+    for (const other of speedGroup.querySelectorAll('.speed-button')) {
+        other.setAttribute('aria-pressed', String(other === button));
+    }
+});
 
 function selectedChapter() {
     const checked = chooser.querySelector('input[name="chapter"]:checked');
@@ -127,20 +152,33 @@ function show(state) {
     canvas.setAttribute('aria-label', VIEW_LABELS[state.vehicle.view] ?? 'Vehicle view');
     dsky.render(state.dsky);
     codePanel.update(state.agc, state.log);
-    statusLine.textContent = `t = ${state.t.toFixed(1)} s · altitude ${formatAltitude(state.vehicle.altitude)}`;
+    statusLine.textContent = `t = ${state.t.toFixed(1)} s · speed ${state.speed}× · altitude ${formatAltitude(state.vehicle.altitude)}`;
     if (state.outcome !== null) {
         outcomeLine.dataset.outcome = state.outcome;
         outcomeLine.textContent = `Outcome: ${state.outcome}`;
+        offerNext(state);
     }
+}
+
+// After a success the server names the next chapter ("next"); after the entry there is none and the mission is complete.
+function offerNext(state) {
+    nextOffer = state.next ?? null;
+    nextButton.hidden = nextOffer === null;
+    missionComplete.hidden = !(state.outcome === 'success' && nextOffer === null && state.chapter === LAST_CHAPTER);
+}
+
+function hideNext() {
+    nextOffer = null;
+    nextButton.hidden = true;
+    missionComplete.hidden = true;
 }
 
 function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function run() {
+async function run(chapter = selectedChapter()) {
     const myRun = ++runId;
-    const chapter = selectedChapter();
     const scenario = chapter === SCENARIO_CHAPTER && scenarioSwitch.checked;
     startButton.disabled = true;
     chooser.disabled = true;
@@ -151,6 +189,7 @@ async function run() {
     dsky.setEnabled(true);
     outcomeLine.textContent = '';
     delete outcomeLine.dataset.outcome;
+    hideNext();
     codePanel.reset();
     statusLine.textContent = 'Starting…';
 
@@ -168,7 +207,7 @@ async function run() {
                 action: 'tick',
                 keys: pendingKeys.splice(0, MAX_KEYS_PER_TICK),
                 rod,
-                speed: 1,
+                speed,
             });
             show(state);
         }
@@ -179,11 +218,51 @@ async function run() {
             running = false;
             dsky.setEnabled(false);
         }
-        startButton.disabled = false;
-        chooser.disabled = false;
+        startButton.disabled = interludePlaying;
+        chooser.disabled = interludePlaying;
         updateScenarioSwitch();
     }
 }
 
-startButton.addEventListener('click', run);
+// Plays the interlude on the canvas for a few seconds; a reduced-motion preference holds one still frame.
+async function playInterlude(offer) {
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const started = performance.now();
+    canvas.setAttribute('aria-label', `Interlude: ${offer.interlude}`);
+    statusLine.textContent = offer.interlude;
+    for (let elapsed = 0; elapsed < INTERLUDE_MS; elapsed = performance.now() - started) {
+        renderInterlude(ctx, offer, still ? 0.7 : elapsed / INTERLUDE_MS);
+        await delay(INTERLUDE_FRAME_MS);
+    }
+    renderInterlude(ctx, offer, still ? 0.7 : 1);
+}
+
+// "Next chapter": the interlude, then the next chapter through the normal start request, never with the scenario.
+async function goToNextChapter() {
+    const offer = nextOffer;
+    if (offer === null || running || interludePlaying) {
+        return;
+    }
+    interludePlaying = true;
+    nextButton.disabled = true;
+    startButton.disabled = true;
+    chooser.disabled = true;
+    try {
+        await playInterlude(offer);
+    } finally {
+        interludePlaying = false;
+        nextButton.disabled = false;
+        startButton.disabled = false;
+        chooser.disabled = false;
+    }
+    const radio = chooser.querySelector(`input[name="chapter"][value="${CSS.escape(offer.chapter)}"]`);
+    if (radio) {
+        radio.checked = true;
+    }
+    scenarioSwitch.checked = false;
+    await run(offer.chapter);
+}
+
+startButton.addEventListener('click', () => run());
+nextButton.addEventListener('click', goToNextChapter);
 updateScenarioSwitch();

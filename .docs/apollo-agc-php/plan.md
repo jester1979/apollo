@@ -557,15 +557,15 @@ Voor slice 1 is `git init` nodig, plus een remote naar `git@github.com:jester197
   - [x] Het hoofdstuk eindigt met parachutes en `success`. De maximale belasting blijft onder 12 g.
   - [x] `EntryChapterTest` slaagt.
 - **13. Tussenstukken, missieverloop, tijdversnelling en README.** AFK. Blocked by: 7, 10, 11, 12.
-  - [ ] Na een geslaagd hoofdstuk toont de pagina "Next chapter". Die knop speelt het tussenstuk af (een animatie van een paar seconden met een korte Engelse tekst) en start dan het volgende hoofdstuk. Na de terugkeer toont de pagina "Mission complete".
-  - [ ] De tussenstukken zijn:
+  - [x] Na een geslaagd hoofdstuk toont de pagina "Next chapter". Die knop speelt het tussenstuk af (een animatie van een paar seconden met een korte Engelse tekst) en start dan het volgende hoofdstuk. Na de terugkeer toont de pagina "Mission complete".
+  - [x] De tussenstukken zijn:
     - Launch → LOI: "Trans-lunar injection and coast".
     - LOI → Landing: "Undocking and descent orbit".
     - Landing → Ascent: "On the surface".
     - Ascent → TEI: "Rendezvous and docking".
     - TEI → Entry: "Coast back to Earth".
-  - [ ] De snelheidsknoppen 1×, 2×, 5× en 10× versnellen de simulatietijd zichtbaar (de klok in N65 en het Canvas).
-  - [ ] `README.md` beschrijft de installatie, het starten en de toetsen, en verwijst naar de bron met de licentie.
+  - [x] De snelheidsknoppen 1×, 2×, 5× en 10× versnellen de simulatietijd zichtbaar (de klok in N65 en het Canvas).
+  - [x] `README.md` beschrijft de installatie, het starten en de toetsen, en verwijst naar de bron met de licentie.
 
 ## Verification
 

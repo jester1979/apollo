@@ -601,6 +601,8 @@ final class LandingChapter implements Chapter
             63 => [hypot($this->state->horizontalVelocity(), $speedUp), $speedUp, $altitude],
             // 64: time left for redesignation (no redesignation in this port), altitude rate, computed altitude.
             64 => [0.0, $speedUp, $altitude],
+            // 65: sampled AGC time in hours, minutes and seconds: the mission clock of this chapter.
+            65 => [$this->agc->missionTime, $this->agc->missionTime, $this->agc->missionTime],
             // 68: slant range to the landing site, time to go in braking phase, LR altitude minus computed
             // altitude (there is no landing radar model, so no difference).
             68 => [$this->slantRange(), $this->timeToGo(), 0.0],

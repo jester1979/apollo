@@ -8,6 +8,7 @@ use Apollo\Chapter\Ascent\AscentChapter;
 use Apollo\Chapter\Chapter;
 use Apollo\Chapter\ChapterId;
 use Apollo\Chapter\Entry\EntryChapter;
+use Apollo\Chapter\Interlude;
 use Apollo\Chapter\Landing\LandingChapter;
 use Apollo\Chapter\Launch\LaunchChapter;
 use Apollo\Chapter\Loi\LoiChapter;
@@ -80,6 +81,7 @@ class Simulation
             't' => round($agc->missionTime, 1),
             'speed' => $this->speed,
             'outcome' => $chapter->outcome()?->value,
+            'next' => Interlude::nextAfter($chapter->id(), $chapter->outcome()),
             'dsky' => $agc->dsky->toArray(),
             'vehicle' => $chapter->vehicleView(),
             'agc' => [
