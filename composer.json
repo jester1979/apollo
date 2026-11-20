@@ -1,0 +1,18 @@
+{
+    "name": "jester1979/apollo",
+    "description": "Apollo 11 guidance computer (Comanche055 / Luminary099) ported to PHP 8.3, with a DSKY and mission visualisation",
+    "type": "project",
+    "license": "MIT",
+    "require": { "php": "^8.3" },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0",
+        "phpstan/phpstan": "^2.0"
+    },
+    "autoload": { "psr-4": { "Apollo\\": "src/" } },
+    "autoload-dev": { "psr-4": { "Apollo\\Tests\\": "tests/" } },
+    "scripts": {
+        "test": "phpunit",
+        "stan": "phpstan analyse",
+        "serve": "php -S 127.0.0.1:8000 -t public"
+    }
+}

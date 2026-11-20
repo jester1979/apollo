@@ -1,0 +1,70 @@
+:root {
+    color-scheme: dark;
+}
+
+body {
+    margin: 0;
+    padding: 1.5rem;
+    background: #101418;
+    color: #e6e6e6;
+    font-family: system-ui, sans-serif;
+}
+
+.page-header h1 {
+    margin: 0 0 0.25rem;
+    font-size: 1.5rem;
+}
+
+.page-header p {
+    margin: 0 0 1rem;
+    color: #9aa4ad;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+button {
+    padding: 0.5rem 1.25rem;
+    border: 1px solid #5b6b7a;
+    border-radius: 4px;
+    background: #1e2a35;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+    background: #2a3a49;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+canvas {
+    display: block;
+    max-width: 100%;
+    border: 1px solid #2a3540;
+    background: #000;
+}
+
+.outcome {
+    min-height: 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.outcome[data-outcome="crashed"],
+.outcome[data-outcome="out_of_fuel"],
+.outcome[data-outcome="missed"] {
+    color: #ff6b5e;
+}
+
+.outcome[data-outcome="success"] {
+    color: #6be38c;
+}
