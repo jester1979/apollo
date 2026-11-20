@@ -224,4 +224,16 @@ final class LaunchChapterTest extends TestCase
         self::assertEqualsWithDelta(408.0, $state->horizontalVelocity(), 1.0);
         self::assertEqualsWithDelta(0.0, $state->altitude(Body::Earth), 1e-6);
     }
+
+    public function testTheNounsOfTheBurnProgrammesCanBeAskedForInTheLaunchWithoutAnError(): void
+    {
+        $simulation = new Simulation();
+        $simulation->start(ChapterId::Launch, false);
+
+        $response = $simulation->tick(new TickInput(keys: [Key::Verb, Key::Zero, Key::Six, Key::Noun, Key::Four, Key::Zero, Key::Enter]));
+
+        self::assertSame(['06', '40'], [$response['dsky']['verb'], $response['dsky']['noun']]);
+        self::assertSame(['+00000', '+00000'], [$response['dsky']['r2'], $response['dsky']['r3']]);
+        self::assertFalse($response['dsky']['lights']['oprErr']);
+    }
 }

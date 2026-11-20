@@ -211,3 +211,26 @@ The builder of slice 7 reported that a landing with PRO at about t=20 s ended `c
 - `src/Chapter/Landing/LandingChapter.php`: the landing site moves down the track with the ignition point; without PRO the chapter ends `missed` after `IGNITION_WAIT_SECONDS` (300 s) with an `agc` log line
 - `src/Guidance/Luminary/LandingGuidance.php`: `placeSite()` moves the site for the braking, approach and ROD guidance
 - `tests/Chapter/LandingLateProTest.php`: success with fuel left for PRO at 5, 10, 20, 40 and 60 s, scenario off and on; `missed` without PRO
+
+### 9. Intrede in de maanbaan (LOI, P40)
+
+`vendor/bin/phpunit` passed with 247 tests, including the 27 tests of `LoiChapterTest`, and `vendor/bin/phpstan analyse` reported no errors. In Chrome, "Lunar orbit insertion" started with PROG 40, V50N25 and R1 `+00203`. The `p` key gave V06N40 with R1 counting down. At t≈36 s V99N40 flashed, and a second `p` gave a flame and the log line "PRO on V99 at TIG+0.6 s … Ignition". Screenshots showed the dashed predicted path open at ignition, a closed ellipse during the burn, and after the burn a 94 km × 262 km orbit with V16N40 and "Outcome: success". A run with only the first PRO ended `missed` at t=95 s with no burn. An offline sweep with ignition 0 to 90 s late gave a perilune of 91 to 112 km.
+
+- `src/Chapter/Loi/LoiChapter.php`: CM chapter with the P40 flow; a late PRO ignites at once; bounded waits on V50 and V99 end the chapter `missed`
+- `src/Chapter/Loi/BurnPhase.php`: enum Checklist, Countdown, Burn, Done
+- `src/Guidance/Comanche/ExternalDeltaVBurn.php`: port of UPDATEVG, STEERING/S40.8 and S40.81, reusable for TEI
+- `src/Guidance/Comanche/BurnCommand.php`: result of one S40.8 pass
+- `src/Physics/Conic.php`: conic from a state vector (eccentricity, apsides, bound or not) and the predicted path points
+- `src/Physics/Trail.php`: flown-path history, capped at 240 points
+- `src/Scenario/StartStates.php`: LOI start state, 40 s countdown, ΔV 750 m/s, SPS and CSM+LM data
+- `src/Simulation/Simulation.php`: `start()` builds `LoiChapter`; program name for P40
+- `src/Dsky/NounTable.php`: CM nouns N25 and N40 from Comanche055's noun list
+- `src/Trace/Routine.php`: nine P40 routines, line numbers checked against the source
+- `src/Chapter/Launch/LaunchChapter.php`: handles the newly valid N25 and N40 with zeros, so `V06N40` during launch does not return a 500
+- `public/assets/views/orbit.js`: top view of the Moon with the flown path solid, the predicted path dashed, and a flame during the burn
+- `public/assets/app.js`: registers the orbit view
+- `tests/Chapter/LoiChapterTest.php`: the 1× run to success, on-time and late PRO, no PRO on V99 and on V50, the path closing during the burn, P00, serialization
+- `tests/Guidance/ExternalDeltaVBurnTest.php`: UPDATEVG, steering along VG, TGO, the S40.81 hold, a prograde burn with another vehicle
+- `tests/Physics/ConicTest.php`, `tests/Physics/TrailTest.php`: conic cases; trail capacity and serialization
+- `tests/Trace/RoutineTest.php`, `tests/Dsky/NounTableTest.php`, `tests/Chapter/LaunchChapterTest.php`: P40 routines, N25 and N40, N40 during launch
+- `tests/Simulation/SimulationTest.php`, `tests/Http/ApiControllerTest.php`: the unbuilt-chapter tests now use `ascent`

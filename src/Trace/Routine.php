@@ -44,6 +44,15 @@ enum Routine
     case GoProg;       // Luminary099/FRESH_START_AND_RESTART.agc:206
     case P11;          // Comanche055/P11.agc:158
     case Vhhdot;       // Comanche055/P11.agc:409
+    case P40Csm;       // Comanche055/P40-P47.agc:46
+    case PostBurn;     // Comanche055/P40-P47.agc:176
+    case Tig5;         // Comanche055/P40-P47.agc:480
+    case V99P;         // Comanche055/P40-P47.agc:984
+    case V99PTig;      // Comanche055/P40-P47.agc:1002
+    case UpdateVg;     // Comanche055/P40-P47.agc:744
+    case Steering;     // Comanche055/P40-P47.agc:819
+    case S408;         // Comanche055/P40-P47.agc:1646
+    case S4081;        // Comanche055/P40-P47.agc:1759
 
     public const COMMIT = 'e7576d50f7c279a707cfaa71be2020592dbf43a8';
 
@@ -83,6 +92,15 @@ enum Routine
             self::GoProg => 'GOPROG',
             self::P11 => 'P11',
             self::Vhhdot => 'VHHDOT',
+            self::P40Csm => 'P40CSM',
+            self::PostBurn => 'POSTBURN',
+            self::Tig5 => 'TIG-5',
+            self::V99P => 'V99P',
+            self::V99PTig => 'V99P/TIG',
+            self::UpdateVg => 'UPDATEVG',
+            self::Steering => 'STEERING',
+            self::S408 => 'S40.8',
+            self::S4081 => 'S40.81',
         };
     }
 
@@ -101,6 +119,8 @@ enum Routine
             self::FindVac, self::NoVac => 'Luminary099/EXECUTIVE.agc',
             self::Bailout => 'Luminary099/ALARM_AND_ABORT.agc',
             self::P11, self::Vhhdot => 'Comanche055/P11.agc',
+            self::P40Csm, self::PostBurn, self::Tig5, self::V99P, self::V99PTig, self::UpdateVg, self::Steering,
+            self::S408, self::S4081 => 'Comanche055/P40-P47.agc',
         };
     }
 
@@ -140,6 +160,15 @@ enum Routine
             self::GoProg => 206,
             self::P11 => 158,
             self::Vhhdot => 409,
+            self::P40Csm => 46,
+            self::PostBurn => 176,
+            self::Tig5 => 480,
+            self::V99P => 984,
+            self::V99PTig => 1002,
+            self::UpdateVg => 744,
+            self::Steering => 819,
+            self::S408 => 1646,
+            self::S4081 => 1759,
         };
     }
 

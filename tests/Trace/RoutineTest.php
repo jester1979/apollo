@@ -106,6 +106,29 @@ final class RoutineTest extends TestCase
         self::assertSame([], $lines, 'every launch routine is a case');
     }
 
+    public function testTheLabelsOfTheP40RoutinesPointAtTheirLines(): void
+    {
+        $lines = [
+            'P40CSM' => 46,
+            'POSTBURN' => 176,
+            'TIG-5' => 480,
+            'V99P' => 984,
+            'V99P/TIG' => 1002,
+            'UPDATEVG' => 744,
+            'STEERING' => 819,
+            'S40.8' => 1646,
+            'S40.81' => 1759,
+        ];
+        foreach (Routine::cases() as $routine) {
+            if (isset($lines[$routine->label()])) {
+                self::assertSame(['Comanche055/P40-P47.agc', $lines[$routine->label()]], [$routine->file(), $routine->line()], $routine->label());
+                unset($lines[$routine->label()]);
+            }
+        }
+
+        self::assertSame([], $lines, 'every P40 routine is a case');
+    }
+
     public function testNoTwoRoutinesShareALabel(): void
     {
         $labels = array_map(static fn (Routine $routine): string => $routine->label(), Routine::cases());

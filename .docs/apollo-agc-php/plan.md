@@ -541,10 +541,10 @@ Voor slice 1 is `git init` nodig, plus een remote naar `git@github.com:jester197
   - [x] Het hoofdstuk eindigt in een baan met `outcome: "success"`.
   - [x] `LaunchChapterTest` slaagt. Het landingshoofdstuk is ook via de kiezer te starten.
 - **9. Intrede in de maanbaan (LOI, P40).** AFK. Blocked by: 8.
-  - [ ] Na het kiezen van "Lunar orbit insertion" volgt V50N25 R1=00203. PRO geeft V06N40 met aftellen, vanaf TIG−5 s knippert V99N40, en PRO start de branding.
-  - [ ] Het bovenaanzicht toont de baan die tijdens de branding van hyperbool naar ellips buigt. Na de branding toont de DSKY V16N40.
-  - [ ] Zonder PRO op V99 volgt geen branding en eindigt het hoofdstuk met `missed`.
-  - [ ] `LoiChapterTest` slaagt.
+  - [x] Na het kiezen van "Lunar orbit insertion" volgt V50N25 R1=00203. PRO geeft V06N40 met aftellen, vanaf TIG−5 s knippert V99N40, en PRO start de branding.
+  - [x] Het bovenaanzicht toont de baan die tijdens de branding van hyperbool naar ellips buigt. Na de branding toont de DSKY V16N40.
+  - [x] Zonder PRO op V99 volgt geen branding en eindigt het hoofdstuk met `missed`.
+  - [x] `LoiChapterTest` slaagt.
 - **10. Opstijgen (P12).** AFK. Blocked by: 8.
   - [ ] Na "Ascent" volgt V06N76, dan PRO, dan V99, dan PRO, en daarna stijgt de stijgtrap op terwijl de daaltrap blijft staan. Daarna toont de DSKY V16N63.
   - [ ] Het hoofdstuk eindigt in een maanbaan met `success`.

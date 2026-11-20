@@ -283,6 +283,8 @@ final class LaunchChapter implements Chapter
         return match ($noun) {
             // 09: the three alarm registers (octal).
             9 => array_map(floatval(...), $this->agc->executive->alarmCodes()),
+            // 25 and 40: P11 loads no checklist code and plans no burn, so the registers hold nothing but zeros.
+            25, 40 => [0.0, 0.0, 0.0],
             // 62: inertial velocity magnitude, altitude rate change, altitude above pad radius.
             62 => $this->monitor->displayValues($this->state, Body::Earth),
             default => throw new \LogicException(sprintf('Noun %d has no values in the launch', $noun)),

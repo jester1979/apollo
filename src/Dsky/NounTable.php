@@ -72,10 +72,16 @@ final readonly class NounTable
     {
         $octal = new NounComponent(Unit::None, Format::Octal);
         $velocity = new NounComponent(Unit::FeetPerSecond, Format::Whole);
+        $burnVelocity = new NounComponent(Unit::FeetPerSecond, Format::Decimal1);
+        $checklist = new NounComponent(Unit::None, Format::Whole);
 
         return new self(
             // 09: alarm codes, octal only for each.
             new Noun(9, $octal, $octal, $octal),
+            // 25: checklist, XXXXX. for each (used with please perform only): R1 is the checklist code.
+            new Noun(25, $checklist, $checklist, $checklist),
+            // 40: time from ignition/cutoff (XXBXX min/sec), VG, delta V (accumulated), XXXX.X ft/s.
+            new Noun(40, new NounComponent(Unit::Seconds, Format::MinutesSeconds), $burnVelocity, $burnVelocity),
             // 62: inertial velocity magnitude (VI), altitude rate change (HDOT), altitude above pad radius (H).
             new Noun(62, $velocity, $velocity, new NounComponent(Unit::NauticalMiles, Format::Decimal1)),
         );

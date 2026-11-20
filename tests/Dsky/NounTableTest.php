@@ -58,4 +58,32 @@ final class NounTableTest extends TestCase
         );
         self::assertNull(NounTable::for(Computer::Lm)->find(62));
     }
+
+    public function testNoun25OfTheCmIsTheChecklistCodeInThreeWholeRegisters(): void
+    {
+        $noun = NounTable::for(Computer::Cm)->find(25);
+
+        self::assertNotNull($noun);
+        self::assertSame(
+            [[Unit::None, Format::Whole], [Unit::None, Format::Whole], [Unit::None, Format::Whole]],
+            array_map(static fn ($component) => [$component->unit, $component->format], $noun->components),
+        );
+        self::assertNull(NounTable::for(Computer::Lm)->find(25));
+    }
+
+    public function testNoun40OfTheCmIsTimeFromIgnitionVelocityToBeGainedAndDeltaV(): void
+    {
+        $noun = NounTable::for(Computer::Cm)->find(40);
+
+        self::assertNotNull($noun);
+        self::assertSame(
+            [
+                [Unit::Seconds, Format::MinutesSeconds],
+                [Unit::FeetPerSecond, Format::Decimal1],
+                [Unit::FeetPerSecond, Format::Decimal1],
+            ],
+            array_map(static fn ($component) => [$component->unit, $component->format], $noun->components),
+        );
+        self::assertNull(NounTable::for(Computer::Lm)->find(40));
+    }
 }

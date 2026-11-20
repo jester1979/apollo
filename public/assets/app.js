@@ -2,16 +2,18 @@ import { createCodePanel } from './codepanel.js';
 import { createDsky } from './dsky.js';
 import { render as renderLanding } from './views/landing.js';
 import { render as renderLaunch } from './views/launch.js';
+import { render as renderOrbit } from './views/orbit.js';
 
 const API_URL = '/api.php';
 const TICK_INTERVAL_MS = 100;
 
-const views = { landing: renderLanding, launch: renderLaunch };
+const views = { landing: renderLanding, launch: renderLaunch, orbit: renderOrbit };
 
 // What the canvas shows for each view, for assistive technology.
 const VIEW_LABELS = {
     landing: 'Lunar module braking above the lunar surface',
     launch: 'Saturn V climbing to orbit, side view',
+    orbit: 'Command and service module near the Moon, top view, with the path flown and the path predicted',
 };
 
 // The Apollo 11 scenario applies to the landing only; the API refuses it for the other chapters.

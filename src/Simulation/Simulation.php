@@ -8,6 +8,7 @@ use Apollo\Chapter\Chapter;
 use Apollo\Chapter\ChapterId;
 use Apollo\Chapter\Landing\LandingChapter;
 use Apollo\Chapter\Launch\LaunchChapter;
+use Apollo\Chapter\Loi\LoiChapter;
 use Apollo\Physics\Integrator;
 
 /**
@@ -27,6 +28,7 @@ class Simulation
     {
         $this->chapter = match ($id) {
             ChapterId::Launch => new LaunchChapter(),
+            ChapterId::LunarOrbitInsertion => new LoiChapter(),
             ChapterId::Landing => new LandingChapter(null, $scenario),
             default => throw new ChapterNotAvailable(),
         };
@@ -93,6 +95,7 @@ class Simulation
 
         return match ($majorMode) {
             0 => 'P00 – No guidance (free fall)',
+            40 => 'P40 – SPS burn with an external delta-V (UPDATEVG, STEERING, S40.8)',
             63 => 'P63 – Braking phase',
             64 => 'P64 – Approach phase',
             65 => 'P65 – Automatic landing (3 ft/s)',
