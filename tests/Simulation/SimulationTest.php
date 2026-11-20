@@ -26,7 +26,9 @@ final class SimulationTest extends TestCase
         self::assertSame('landing', $response['chapter']);
         self::assertSame('LM', $response['computer']);
         self::assertNull($response['outcome']);
-        self::assertSame([], $response['log']);
+        self::assertCount(1, $response['log']);
+        self::assertSame('agc', $response['log'][0]['kind']);
+        self::assertSame('P63LM', $response['log'][0]['routine']['label']);
         self::assertIsArray($response['dsky']);
         self::assertIsArray($response['agc']);
         self::assertSame('P63LM', $response['agc']['routine']['label']);
@@ -202,5 +204,43 @@ final class SimulationTest extends TestCase
         $after = $this->tick($copy, [Key::Eight, Key::Enter]);
         self::assertSame($before['dsky'], $after['dsky']);
         self::assertSame('68', $after['dsky']['noun']);
+    }
+
+    public function testALogLineIsSentOnlyOnce(): void
+    {
+        $simulation = new Simulation();
+        $simulation->start(ChapterId::Landing, false);
+
+        $first = $simulation->tick(new TickInput(keys: [Key::Verb, Key::One, Key::Six, Key::Noun, Key::Six, Key::Eight, Key::Enter]));
+        $second = $simulation->tick(new TickInput());
+
+        self::assertSame(
+            [
+                'VERB → verb register blanked, two digits expected',
+                '1 → digit put in the verb register',
+                '6 → digit put in the verb register',
+                'NOUN → noun register blanked, two digits expected',
+                '6 → digit put in the noun register',
+                '8 → digit put in the noun register',
+                'V16N68 ENTR → monitor noun 68, refreshed every second',
+            ],
+            array_column($first['log'], 'text'),
+        );
+        self::assertSame([], $second['log']);
+    }
+
+    public function testAnInputLineNamesThePinballRoutineAndKeepsTheMissionTime(): void
+    {
+        $simulation = new Simulation();
+        $simulation->start(ChapterId::Landing, false);
+
+        $response = $simulation->tick(new TickInput(keys: [Key::Verb, Key::Seven, Key::Seven, Key::Enter]));
+
+        $last = $response['log'][array_key_last($response['log'])];
+        self::assertSame('input', $last['kind']);
+        self::assertSame('V77N63 ENTR → unknown verb, OPR ERR', $last['text']);
+        self::assertSame('CHARALRM', $last['routine']['label']);
+        self::assertSame(2744, $last['routine']['line']);
+        self::assertSame(0.0, $last['t']);
     }
 }

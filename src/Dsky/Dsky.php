@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Apollo\Dsky;
 
 use Apollo\Agc\Computer;
+use Apollo\Trace\EventLog;
+use Apollo\Trace\LogKind;
+use Apollo\Trace\Routine;
 
 /**
  * One DSKY: the display (PROG, VERB and NOUN, the registers R1 to R3, the lights) and the keys.
@@ -16,6 +19,8 @@ use Apollo\Agc\Computer;
  * or the end of a lamp test) gives the display back. The values of a noun the user asks for come from
  * the program side: the chapter asks requestedUserNoun() and answers with supplyUserData(). Nothing
  * here holds a closure, so the object serializes into the session with the rest of the simulation.
+ * Every key press is also written to the event log, as "key → what the computer did" with the Pinball
+ * routine that does it.
  *
  * The tick response carries the display as formatted strings, so the browser converts nothing.
  *
@@ -84,7 +89,10 @@ final class Dsky
     /** @var array<string, bool> keyed by Light::value */
     private array $lights = [];
 
-    public function __construct(private readonly Computer $computer)
+    /** The mission time of the key press being handled, for the log lines. */
+    private float $now = 0.0;
+
+    public function __construct(private readonly Computer $computer, private readonly ?EventLog $log = null)
     {
         $this->nouns = NounTable::for($computer);
         foreach (Light::cases() as $light) {
@@ -150,15 +158,18 @@ final class Dsky
     }
 
     /**
-     * One key press. The allowed programs are the ones V37 may select in the running chapter.
+     * One key press. The allowed programs are the ones V37 may select in the running chapter; $time is
+     * the mission time the log line gets.
      *
      * @param list<int> $allowedPrograms
      */
-    public function press(Key $key, array $allowedPrograms = []): void
+    public function press(Key $key, array $allowedPrograms = [], float $time = 0.0): void
     {
         if ($this->lampTest > 0.0) {
             return; // the display stays busy until the lamp test is over (TSTLTS3)
         }
+
+        $this->now = $time;
 
         match ($key) {
             Key::Verb => $this->pressVerb(),
@@ -167,8 +178,10 @@ final class Dsky
             Key::Proceed => $this->pressProceed(),
             Key::Clear => $this->pressClear(),
             Key::Reset => $this->pressReset(),
-            Key::KeyRelease => $this->releaseUserDisplay(),
-            Key::Plus, Key::Minus => $this->alarm(), // signs only belong to the load verbs, which this port lacks
+            Key::KeyRelease => $this->pressKeyRelease(),
+            Key::Plus, Key::Minus => $this->alarm(
+                sprintf('%s → no load verb is waiting for a sign, OPR ERR', $key === Key::Plus ? '+' : '-'),
+            ), // signs only belong to the load verbs, which this port lacks
             default => $this->pressDigit((int) $key->value),
         };
     }
@@ -297,6 +310,7 @@ final class Dsky
         $this->entry = Entry::Verb;
         $this->verbTyped = true;
         $this->userVerbText = '';
+        $this->note('VERB → verb register blanked, two digits expected', Routine::Verb);
     }
 
     /** NOUN starts a new noun; two digits follow. */
@@ -306,6 +320,7 @@ final class Dsky
         $this->entry = Entry::Noun;
         $this->nounTyped = true;
         $this->userNounText = '';
+        $this->note('NOUN → noun register blanked, two digits expected', Routine::Noun);
     }
 
     private function pressDigit(int $digit): void
@@ -316,16 +331,23 @@ final class Dsky
             Entry::None => null,
         };
         if ($text === null || strlen($text) >= 2) {
-            $this->alarm(); // a digit where none belongs
+            // a digit where none belongs
+            $this->alarm(sprintf('%d → no register is waiting for a digit, OPR ERR', $digit));
 
             return;
         }
 
+        $register = match ($this->entry) {
+            Entry::Verb => 'verb',
+            Entry::Noun => 'noun',
+            default => 'program',
+        };
         if ($this->entry === Entry::Verb) {
             $this->userVerbText .= $digit;
         } else {
             $this->userNounText .= $digit;
         }
+        $this->note(sprintf('%d → digit put in the %s register', $digit, $register), Routine::Num);
     }
 
     /**
@@ -334,7 +356,7 @@ final class Dsky
     private function pressEnter(array $allowedPrograms): void
     {
         match ($this->entry) {
-            Entry::None => null, // nothing keyed in: ENTR has nothing to execute
+            Entry::None => $this->note('ENTR → nothing keyed in, nothing to execute', Routine::Enter),
             Entry::Program => $this->enterProgram($allowedPrograms),
             Entry::Verb, Entry::Noun => $this->executeVerbNoun(),
         };
@@ -351,14 +373,17 @@ final class Dsky
         $this->verbTyped = false;
         $this->nounTyped = false;
         $this->entry = Entry::None;
+        $command = self::command($verb, $noun);
 
         if ($verb === self::VERB_LAMP_TEST) {
             $this->startLampTest();
+            $this->note(self::command($verb, null) . ' ENTR → lamp test: every segment and every light on for 5 s', Routine::VbTstLts);
 
             return;
         }
         if ($verb === self::VERB_CHANGE_PROGRAM) {
             // MMCHANG asks for the program in the noun cells.
+            $this->note(self::command($verb, null) . ' ENTR → change program: the program number is asked for', Routine::V37);
             $this->userVerbText = '37';
             $this->userNounText = '';
             $this->stopMonitor();
@@ -367,17 +392,18 @@ final class Dsky
             return;
         }
         if ($verb === null || !in_array($verb, self::DISPLAY_VERBS, true)) {
-            $this->alarm(); // unknown verb
+            $this->alarm($command . ' ENTR → unknown verb, OPR ERR'); // unknown verb
 
             return;
         }
         if ($noun === null || $this->nouns->find($noun) === null) {
-            $this->alarm(); // unknown noun for this computer, or not two digits
+            // unknown noun for this computer, or not two digits
+            $this->alarm($command . ' ENTR → unknown noun, OPR ERR');
 
             return;
         }
         if ($verb === self::VERB_OCTAL && $noun !== self::OCTAL_NOUN) {
-            $this->alarm(); // V05 shows octal, which only N09 has
+            $this->alarm($command . ' ENTR → V05 shows octal, which only N09 has, OPR ERR');
 
             return;
         }
@@ -391,6 +417,14 @@ final class Dsky
         $this->userDataNoun = $noun;
         $this->userDataPending = true;
         $this->userMonitor = $verb === self::VERB_MONITOR;
+        $this->note(
+            sprintf('%s ENTR → %s', $command, match ($verb) {
+                self::VERB_OCTAL => sprintf('display noun %02d in octal', $noun),
+                self::VERB_MONITOR => sprintf('monitor noun %02d, refreshed every second', $noun),
+                default => sprintf('display noun %02d in decimal', $noun),
+            }),
+            Routine::VerbFan,
+        );
     }
 
     /**
@@ -406,7 +440,7 @@ final class Dsky
         $program = self::typedNumber($this->userNounText);
         if ($program === null) {
             // ALMCYCLE: two digits were demanded; alarm and ask again.
-            $this->alarm();
+            $this->alarm('ENTR → two program digits were demanded, OPR ERR');
             $this->userNounText = '';
             $this->entry = Entry::Program;
 
@@ -415,8 +449,12 @@ final class Dsky
 
         if (in_array($program, $allowedPrograms, true)) {
             $this->programChange = $program;
+            $this->note(sprintf('V37 N%02d ENTR → program %02d requested', $program, $program), Routine::V37);
         } else {
-            $this->alarm();
+            $this->alarm(
+                sprintf('V37 N%02d ENTR → program %02d does not exist here, OPR ERR', $program, $program),
+                Routine::V37NoNo,
+            );
         }
         $this->releaseUserDisplay();
     }
@@ -425,9 +463,12 @@ final class Dsky
     private function pressProceed(): void
     {
         if (!$this->flash || !in_array($this->verb, self::PROCEED_VERBS, true)) {
+            $this->note('PRO → no display is asking for an answer, nothing happens', Routine::ProcKey);
+
             return;
         }
 
+        $this->note(sprintf('PRO → answer to the flashing V%02d: proceed', $this->verb), Routine::ProcKey);
         $this->proceed = true;
         $this->flash = false;
         $this->releaseUserDisplay();
@@ -436,6 +477,10 @@ final class Dsky
     /** CLR wipes the register being keyed in. */
     private function pressClear(): void
     {
+        $this->note(
+            $this->entry === Entry::None ? 'CLR → nothing keyed in' : 'CLR → the register being keyed in is wiped',
+            Routine::Clear,
+        );
         match ($this->entry) {
             Entry::Verb => $this->userVerbText = '',
             Entry::Noun, Entry::Program => $this->userNounText = '',
@@ -448,15 +493,35 @@ final class Dsky
     {
         $this->lights[Light::Prog->value] = false;
         $this->lights[Light::OprErr->value] = false;
+        $this->note('RSET → OPR ERR and PROG lights off', Routine::ErrorReset);
+    }
+
+    /** KEY REL: the display of the program comes back. */
+    private function pressKeyRelease(): void
+    {
+        $this->releaseUserDisplay();
+        $this->note('KEY REL → keyed-in display released, the program display comes back', Routine::VbRelDsp);
     }
 
     /** CHARALRM: switches OPR ERR on and drops what was being keyed in. */
-    private function alarm(): void
+    private function alarm(string $text, Routine $routine = Routine::CharAlrm): void
     {
         $this->lights[Light::OprErr->value] = true;
         $this->verbTyped = false;
         $this->nounTyped = false;
         $this->entry = Entry::None;
+        $this->note($text, $routine);
+    }
+
+    private function note(string $text, Routine $routine): void
+    {
+        $this->log?->record(LogKind::Input, $text, $routine, $this->now);
+    }
+
+    /** "V16N68", or "V16" without a noun, or "V--" when no verb is known. */
+    private static function command(?int $verb, ?int $noun): string
+    {
+        return ($verb === null ? 'V--' : sprintf('V%02d', $verb)) . ($noun === null ? '' : sprintf('N%02d', $noun));
     }
 
     /** V35 (VBTSTLTS): every segment shows 8 and every light is on for 5 s. */

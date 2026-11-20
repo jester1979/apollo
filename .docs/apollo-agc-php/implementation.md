@@ -111,3 +111,25 @@ Verified by two builders. `vendor/bin/phpunit` passed with 62 tests and 2882 ass
 - `tests/Guidance/LandingGuidanceTest.php`: adapted to the PRO gate; test for `timeToGoFrom`
 - `tests/Simulation/SimulationTest.php`: tick tests for keys, OPR ERR and RSET, the lamp test, V99 and PRO, session serialization
 - `tests/Support/LandingBurn.php`: test helper that runs the landing to TIG−5 s and presses PRO
+
+### 5. Codepaneel en log
+
+`vendor/bin/phpunit` passed with 133 tests and 3073 assertions, including `RoutineTest`, and `vendor/bin/phpstan analyse` reported no errors. The `@see` grep over `src/Guidance`, `src/Agc` and `src/Dsky` printed nothing, and a script confirmed that each of the 20 `Routine` cases starts at its line in the source at the pinned commit. In Chrome at t=41 s the code panel showed "P63 – Braking phase" and the link "QUADGUID · Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc:546", with an href to line 546 at commit `e7576d50f7c279a707cfaa71be2020592dbf43a8`. Key presses gave log lines such as "V16N68 ENTR → monitor noun 68, refreshed every second" (VERBFAN) and "V77N68 ENTR → unknown verb, OPR ERR" (CHARALRM). Program events gave `agc` lines for the V99 flash, ignition, throttle-up and P63 → P00. The P63 → P64 line is proven in `LandingChapterTest`, not in the browser.
+
+- `src/Trace/Routine.php`: 15 more cases for the routines the log names, each line number checked against the source
+- `src/Trace/EventLog.php`: keeps the last 200 lines `{seq, t, kind, text, routine}`; `takeNew()` hands out each line once
+- `src/Trace/LogKind.php`: enum for kind: input, agc, alarm
+- `src/Agc/Agc.php`: owns the `EventLog` and hands it to the `Dsky`; `@see` MODREG and TIME2
+- `src/Agc/Computer.php`: `@see` lines for the verb lists of the two computers
+- `src/Dsky/Key.php`: `@see` CHARIN, the key-code table
+- `src/Dsky/Dsky.php`: `press()` takes a time and writes an "input → reaction" line with the Pinball routine for every key
+- `src/Chapter/Landing/LandingChapter.php`: writes `agc` lines for P63 start, the V99 flash, ignition, throttle-up, P63 → P64 and V37
+- `src/Simulation/Simulation.php`: the response's `log` is `takeNew()`; keys are pressed with the mission time
+- `public/assets/codepanel.js`: program line, routine link, log with the newest line on top and at most 200 lines; `textContent` only; the href is set only for GitHub Apollo-11 blob URLs
+- `public/assets/app.js`: creates the code panel, resets it on each start, feeds it `agc` and `log`
+- `public/index.php`: the code panel section under the canvas and DSKY
+- `public/assets/style.css`: styles for the code panel and log
+- `tests/Trace/EventLogTest.php`: line shape, once-only `takeNew`, the 200 cap, session round trip
+- `tests/Trace/RoutineTest.php`: Pinball and V37 line numbers; no two labels are equal
+- `tests/Simulation/SimulationTest.php`: the P63 `agc` line at start, send-once, routine and time of an input line
+- `tests/Chapter/LandingChapterTest.php`: `agc` lines from P63 through ignition to P64, V37 → P00

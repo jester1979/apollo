@@ -53,7 +53,7 @@ class Simulation
         $dsky = $this->chapter->agc()->dsky;
         $programs = $this->chapter->allowedPrograms();
         foreach ($input->keys as $key) {
-            $dsky->press($key, $programs);
+            $dsky->press($key, $programs, $this->chapter->agc()->missionTime);
         }
         $this->chapter->step($dt, $input);
         $dsky->advance($dt);
@@ -85,7 +85,7 @@ class Simulation
                     'restarts' => 0,
                 ],
             ],
-            'log' => [],
+            'log' => $agc->log->takeNew(),
         ];
     }
 

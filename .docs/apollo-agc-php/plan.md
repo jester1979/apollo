@@ -521,9 +521,9 @@ Voor slice 1 is `git init` nodig, plus een remote naar `git@github.com:jester197
   - [x] Voor de ontsteking knippert V99N63 vanaf TIG−5 s. Zonder PRO volgt geen ontsteking, met PRO wel.
   - [x] `DskyTest` slaagt.
 - **5. Codepaneel en log.** AFK. Blocked by: 4.
-  - [ ] Het codepaneel toont tijdens P63 `QUADGUID` met `Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc:546`, als link naar die regel op GitHub (commit `e7576d5…`).
-  - [ ] Elke DSKY-invoer verschijnt in het log als "invoer → reactie", met de Pinball-routine erbij, en programmawissels verschijnen als `agc`-regels.
-  - [ ] `RoutineTest` slaagt en de `@see`-grep uit Tests geeft geen bestanden.
+  - [x] Het codepaneel toont tijdens P63 `QUADGUID` met `Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc:546`, als link naar die regel op GitHub (commit `e7576d5…`).
+  - [x] Elke DSKY-invoer verschijnt in het log als "invoer → reactie", met de Pinball-routine erbij, en programmawissels verschijnen als `agc`-regels.
+  - [x] `RoutineTest` slaagt en de `@see`-grep uit Tests geeft geen bestanden.
 - **6. P64, P65 en P66 met ROD: landen.** AFK. Blocked by: 4.
   - [ ] Zonder ingrijpen gaat de landing door P64 (V06N64) en P65 (V06N60) en eindigt met `outcome: "success"`. "CONTACT LIGHT" verschijnt.
   - [ ] Pijl omhoog of omlaag tijdens P64 schakelt naar P66. Elke klik verandert de daalsnelheid met 1 ft/s, zichtbaar in R2 van N60 en op het Canvas.

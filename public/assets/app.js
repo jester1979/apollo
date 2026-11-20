@@ -1,3 +1,4 @@
+import { createCodePanel } from './codepanel.js';
 import { createDsky } from './dsky.js';
 import { render as renderLanding } from './views/landing.js';
 
@@ -28,6 +29,8 @@ dsky.render({
     prog: '', verb: '', noun: '', r1: '', r2: '', r3: '', flash: false, lights: {},
 });
 
+const codePanel = createCodePanel(document.getElementById('codepanel'));
+
 let runId = 0;
 
 async function post(payload) {
@@ -57,6 +60,7 @@ function show(state) {
         view(ctx, state.vehicle, state.t);
     }
     dsky.render(state.dsky);
+    codePanel.update(state.agc, state.log);
     statusLine.textContent = `t = ${state.t.toFixed(1)} s · altitude ${state.vehicle.altitude.toFixed(0)} m`;
     if (state.outcome !== null) {
         outcomeLine.dataset.outcome = state.outcome;
@@ -76,6 +80,7 @@ async function run() {
     dsky.setEnabled(true);
     outcomeLine.textContent = '';
     delete outcomeLine.dataset.outcome;
+    codePanel.reset();
     statusLine.textContent = 'Starting…';
 
     try {

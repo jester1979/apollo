@@ -17,6 +17,21 @@ enum Routine
     case RootPsrs;     // Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc:1272
     case StartP64;     // Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc:260
     case BurnBaby;     // Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc:159
+    case V99Recyc;     // Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc:770
+    case P63Zoom;      // Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc:564
+    case Num;          // Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc:536
+    case Verb;         // Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc:658
+    case Noun;         // Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc:671
+    case Clear;        // Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc:752
+    case Enter;        // Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc:870
+    case VerbFan;      // Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc:970
+    case CharAlrm;     // Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc:2744
+    case ProcKey;      // Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc:2874
+    case VbRelDsp;     // Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc:2918
+    case VbTstLts;     // Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc:3623
+    case ErrorReset;   // Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc:3732
+    case V37;          // Luminary099/FRESH_START_AND_RESTART.agc:739
+    case V37NoNo;      // Luminary099/FRESH_START_AND_RESTART.agc:978
 
     public const COMMIT = 'e7576d50f7c279a707cfaa71be2020592dbf43a8';
 
@@ -29,6 +44,21 @@ enum Routine
             self::RootPsrs => 'ROOTPSRS',
             self::StartP64 => 'STARTP64',
             self::BurnBaby => 'BURNBABY',
+            self::V99Recyc => 'V99RECYC',
+            self::P63Zoom => 'P63ZOOM',
+            self::Num => 'NUM',
+            self::Verb => 'VERB',
+            self::Noun => 'NOUN',
+            self::Clear => 'CLEAR',
+            self::Enter => 'ENTER',
+            self::VerbFan => 'VERBFAN',
+            self::CharAlrm => 'CHARALRM',
+            self::ProcKey => 'PROCKEY',
+            self::VbRelDsp => 'VBRELDSP',
+            self::VbTstLts => 'VBTSTLTS',
+            self::ErrorReset => 'ERROR',
+            self::V37 => 'V37',
+            self::V37NoNo => 'V37NONO',
         };
     }
 
@@ -38,7 +68,10 @@ enum Routine
         return match ($this) {
             self::P63Lm => 'Luminary099/THE_LUNAR_LANDING.agc',
             self::QuadGuid, self::RootPsrs, self::StartP64 => 'Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc',
-            self::BurnBaby => 'Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc',
+            self::BurnBaby, self::V99Recyc, self::P63Zoom => 'Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc',
+            self::Num, self::Verb, self::Noun, self::Clear, self::Enter, self::VerbFan, self::CharAlrm,
+            self::ProcKey, self::VbRelDsp, self::VbTstLts, self::ErrorReset => 'Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc',
+            self::V37, self::V37NoNo => 'Luminary099/FRESH_START_AND_RESTART.agc',
         };
     }
 
@@ -51,6 +84,21 @@ enum Routine
             self::RootPsrs => 1272,
             self::StartP64 => 260,
             self::BurnBaby => 159,
+            self::V99Recyc => 770,
+            self::P63Zoom => 564,
+            self::Num => 536,
+            self::Verb => 658,
+            self::Noun => 671,
+            self::Clear => 752,
+            self::Enter => 870,
+            self::VerbFan => 970,
+            self::CharAlrm => 2744,
+            self::ProcKey => 2874,
+            self::VbRelDsp => 2918,
+            self::VbTstLts => 3623,
+            self::ErrorReset => 3732,
+            self::V37 => 739,
+            self::V37NoNo => 978,
         };
     }
 

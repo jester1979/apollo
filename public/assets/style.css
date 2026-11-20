@@ -225,3 +225,79 @@ canvas {
 .dsky-key.pressed {
     background: #3a4148;
 }
+
+.codepanel {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #2a3540;
+    border-radius: 6px;
+    background: #0b0f13;
+}
+
+.codepanel-program {
+    margin: 0 0 0.25rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.codepanel-routine {
+    margin: 0 0 0.75rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.9rem;
+}
+
+.codepanel a {
+    color: #7fc4ff;
+}
+
+.codepanel-title {
+    margin: 0 0 0.4rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9aa4ad;
+}
+
+.codepanel-log {
+    max-height: 16rem;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.8rem;
+}
+
+.codepanel-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.75rem;
+    padding: 0.2rem 0;
+    border-bottom: 1px solid #1a222a;
+}
+
+.codepanel-time {
+    min-width: 4.5rem;
+    color: #7d8a96;
+}
+
+.codepanel-kind {
+    min-width: 3rem;
+    color: #9aa4ad;
+}
+
+.codepanel-line[data-kind="input"] .codepanel-kind {
+    color: #6be38c;
+}
+
+.codepanel-line[data-kind="agc"] .codepanel-kind {
+    color: #7fc4ff;
+}
+
+.codepanel-line[data-kind="alarm"] .codepanel-kind {
+    color: #ff6b5e;
+}
+
+.codepanel-text {
+    flex: 1 1 18rem;
+}

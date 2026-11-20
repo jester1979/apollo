@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Apollo\Dsky;
 
-/** The DSKY keys a tick request may carry. */
+/**
+ * The DSKY keys a tick request may carry. The original takes a 5-bit key code per key; this enum names
+ * the 19 keys, and Dsky::press() does what the routine for that code does.
+ *
+ * @see Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc CHARIN
+ */
 enum Key: string
 {
     case Verb = 'VERB';

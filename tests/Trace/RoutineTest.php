@@ -31,4 +31,30 @@ final class RoutineTest extends TestCase
             Routine::QuadGuid->toArray(),
         );
     }
+
+    public function testTheLabelsOfThePinballRoutinesPointAtTheirLines(): void
+    {
+        $lines = [
+            'VERBFAN' => 970,
+            'PROCKEY' => 2874,
+            'CHARALRM' => 2744,
+            'V37' => 739,
+            'V37NONO' => 978,
+        ];
+        foreach (Routine::cases() as $routine) {
+            if (isset($lines[$routine->label()])) {
+                self::assertSame($lines[$routine->label()], $routine->line(), $routine->label());
+                unset($lines[$routine->label()]);
+            }
+        }
+
+        self::assertSame([], $lines, 'every logged routine is a case');
+    }
+
+    public function testNoTwoRoutinesShareALabel(): void
+    {
+        $labels = array_map(static fn (Routine $routine): string => $routine->label(), Routine::cases());
+
+        self::assertSame($labels, array_values(array_unique($labels)));
+    }
 }

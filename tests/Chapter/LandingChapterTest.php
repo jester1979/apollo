@@ -301,4 +301,61 @@ final class LandingChapterTest extends TestCase
         self::assertNull($chapter->outcome());
         self::assertSame(63, $chapter->agc()->majorMode);
     }
+
+    public function testTheLogFollowsTheLandingFromP63ThroughIgnitionToP64(): void
+    {
+        $chapter = new LandingChapter();
+        LandingBurn::proceed($chapter);
+        $chapter->step(1000.0, new TickInput());
+
+        $lines = $chapter->agc()->log->takeNew();
+
+        self::assertSame(
+            [
+                'P63 starts: the lander coasts towards TIG',
+                'TIG-5 s: V99N63 flashes, the crew is asked to enable the engine',
+                'PRO → answer to the flashing V99: proceed',
+                'Ignition: the DPS burns at minimum throttle',
+                '26 s after ignition: the DPS throttles up, the braking guidance takes over',
+                'P63 → P64: high gate reached, the approach phase starts',
+            ],
+            array_column($lines, 'text'),
+        );
+        self::assertSame(
+            ['P63LM', 'V99RECYC', 'PROCKEY', 'BURNBABY', 'P63ZOOM', 'STARTP64'],
+            array_map(static fn (array $line): ?string => $line['routine']['label'] ?? null, $lines),
+        );
+        self::assertSame(['agc', 'agc', 'input', 'agc', 'agc', 'agc'], array_column($lines, 'kind'));
+    }
+
+    public function testV37ToP00IsLoggedAsAProgramChange(): void
+    {
+        $chapter = new LandingChapter();
+        $chapter->agc()->log->takeNew();
+
+        $this->press($chapter, [Key::Verb, Key::Three, Key::Seven, Key::Enter, Key::Zero, Key::Zero, Key::Enter]);
+        $chapter->step(0.1, new TickInput());
+        $lines = $chapter->agc()->log->takeNew();
+
+        $last = array_pop($lines);
+        self::assertNotNull($last);
+        self::assertSame('agc', $last['kind']);
+        self::assertSame('P63 → P00: the engine goes off, the guidance stops', $last['text']);
+        self::assertContains('V37 N00 ENTR → program 00 requested', array_column($lines, 'text'));
+    }
+
+    public function testEveryKeyThatCannotDoAnythingIsAnswered(): void
+    {
+        $chapter = new LandingChapter();
+        $chapter->agc()->log->takeNew();
+
+        $this->press($chapter, [Key::Clear, Key::Reset, Key::KeyRelease, Key::Enter, Key::Plus, Key::Five, Key::Proceed]);
+        $lines = $chapter->agc()->log->takeNew();
+
+        self::assertSame(
+            ['CLEAR', 'ERROR', 'VBRELDSP', 'ENTER', 'CHARALRM', 'CHARALRM', 'PROCKEY'],
+            array_map(static fn (array $line): ?string => $line['routine']['label'] ?? null, $lines),
+        );
+        self::assertSame(['input'], array_values(array_unique(array_column($lines, 'kind'))));
+    }
 }

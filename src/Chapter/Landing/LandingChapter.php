@@ -18,6 +18,7 @@ use Apollo\Physics\Vehicle;
 use Apollo\Scenario\LandingTargets;
 use Apollo\Scenario\StartStates;
 use Apollo\Simulation\TickInput;
+use Apollo\Trace\LogKind;
 use Apollo\Trace\Routine;
 
 /**
@@ -93,6 +94,7 @@ final class LandingChapter implements Chapter
         );
         $this->agc->dsky->showMajorMode($this->agc->majorMode);
         $this->displayP63();
+        $this->logAgc('P63 starts: the lander coasts towards TIG', Routine::P63Lm);
     }
 
     public function id(): ChapterId
@@ -171,6 +173,8 @@ final class LandingChapter implements Chapter
         $program = $dsky->takeProgramChange();
         if ($program === 0) {
             $this->stopGuidance();
+        } elseif ($program !== null) {
+            $this->logAgc(sprintf('P%02d is already running, nothing changes', $program), Routine::V37);
         }
         // P63 is the program that runs: selecting it again changes nothing.
     }
@@ -188,6 +192,7 @@ final class LandingChapter implements Chapter
         $this->vehicle->throttle = Throttle::MINIMUM;
         $this->agc->currentRoutine = Routine::BurnBaby;
         $this->displayP63();
+        $this->logAgc('Ignition: the DPS burns at minimum throttle', Routine::BurnBaby);
     }
 
     /** V37 to P00: the engine goes off and the guidance stops; the landing is lost. */
@@ -197,6 +202,7 @@ final class LandingChapter implements Chapter
         $this->agc->majorMode = 0;
         $this->agc->dsky->showMajorMode(0);
         $this->outcome = Outcome::Missed;
+        $this->logAgc('P63 → P00: the engine goes off, the guidance stops', Routine::V37);
     }
 
     /** What happens after each 0.1 s step: the V99 display and the refreshes of the displays. */
@@ -214,6 +220,7 @@ final class LandingChapter implements Chapter
         if ($burnStep === self::IGNITION_STEPS) {
             // P63ZOOM: 26 s after ignition the DPS throttles up and the guidance takes over.
             $this->vehicle->throttle = $this->throttle->flatOut();
+            $this->logAgc('26 s after ignition: the DPS throttles up, the braking guidance takes over', Routine::P63Zoom);
         }
 
         $this->lastGuidanceStep = $this->steps;
@@ -233,6 +240,7 @@ final class LandingChapter implements Chapter
             $this->agc->dsky->showMajorMode(64);
             $this->agc->currentRoutine = Routine::StartP64;
             $this->outcome = Outcome::Missed;
+            $this->logAgc('P63 → P64: high gate reached, the approach phase starts', Routine::StartP64);
 
             return;
         }
@@ -249,8 +257,16 @@ final class LandingChapter implements Chapter
     {
         $dsky = $this->agc->dsky;
         $enable = $this->awaitingEngineEnable();
+        if ($enable && $this->steps === self::ENABLE_ENGINE_STEPS) {
+            $this->logAgc('TIG-5 s: V99N63 flashes, the crew is asked to enable the engine', Routine::V99Recyc);
+        }
         $dsky->requestDisplay($enable ? 99 : 6, 63, $enable);
         $dsky->supplyData($this->nounValues(63));
+    }
+
+    private function logAgc(string $text, Routine $routine): void
+    {
+        $this->agc->log->record(LogKind::Agc, $text, $routine, $this->agc->missionTime);
     }
 
     /** Gives the user's own display (V06, V16, V05) the values of the noun it shows, when it asks. */
