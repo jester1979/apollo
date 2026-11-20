@@ -530,11 +530,11 @@ Voor slice 1 is `git init` nodig, plus een remote naar `git@github.com:jester197
   - [x] Te hard neerkomen geeft `outcome: "crashed"`, een lege tank `outcome: "out_of_fuel"`.
   - [x] `LandingGuidanceTest` slaagt volledig.
 - **7. Executive en het Apollo 11-scenario.** AFK. Blocked by: 5, 6.
-  - [ ] De startknop van de landing heeft een schakelaar "Apollo 11 scenario (1201/1202 alarms)".
-  - [ ] Met het scenario gaat tijdens P63 of P64 PROG aan, toont V05N09 de code 01202 of 01201, en loopt de RESTART-teller in het codepaneel op. De landing gaat daarna door en kan slagen.
-  - [ ] Zonder scenario komt er geen alarm.
-  - [ ] Het codepaneel toont 7 core sets en 5 VAC-gebieden met de jobnamen, en die lopen vol vlak voor een alarm.
-  - [ ] `ExecutiveTest` en `LandingScenarioTest` slagen.
+  - [x] De startknop van de landing heeft een schakelaar "Apollo 11 scenario (1201/1202 alarms)".
+  - [x] Met het scenario gaat tijdens P63 of P64 PROG aan, toont V05N09 de code 01202 of 01201, en loopt de RESTART-teller in het codepaneel op. De landing gaat daarna door en kan slagen.
+  - [x] Zonder scenario komt er geen alarm.
+  - [x] Het codepaneel toont 7 core sets en 5 VAC-gebieden met de jobnamen, en die lopen vol vlak voor een alarm.
+  - [x] `ExecutiveTest` en `LandingScenarioTest` slagen.
 - **8. Hoofdstukkiezer en het lanceringshoofdstuk.** AFK. Blocked by: 5.
   - [ ] De pagina toont een kiezer met de zes hoofdstukken. Kies je "Launch", dan stijgt de Saturn V op het Canvas en laten S-IC en S-II zichtbaar los.
   - [ ] De DSKY toont P11 met V06N62 (VI, HDOT, H). Het codepaneel toont `VHHDOT` en zegt dat de raket zelf door de LVDC werd gestuurd, die niet in de bron zit.

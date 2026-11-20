@@ -84,6 +84,7 @@ final class Dsky
     private float $lampTest = 0.0;
 
     private bool $proceed = false;
+    private bool $reset = false;
     private ?int $programChange = null;
 
     /** @var array<string, bool> keyed by Light::value */
@@ -206,6 +207,21 @@ final class Dsky
         $this->proceed = false;
 
         return $proceed;
+    }
+
+    /** True when RSET was pressed since the last call: the program side then clears its alarm registers too. */
+    public function takeReset(): bool
+    {
+        $reset = $this->reset;
+        $this->reset = false;
+
+        return $reset;
+    }
+
+    /** True while the user's display is a monitor (V16) that the chapter has to refresh every second. */
+    public function isMonitoring(): bool
+    {
+        return $this->userMonitor && $this->userDataNoun !== null;
     }
 
     /** The program V37 selected since the last call, or null. Only a program the chapter allows gets here. */
@@ -493,6 +509,7 @@ final class Dsky
     {
         $this->lights[Light::Prog->value] = false;
         $this->lights[Light::OprErr->value] = false;
+        $this->reset = true;
         $this->note('RSET → OPR ERR and PROG lights off', Routine::ErrorReset);
     }
 

@@ -298,6 +298,75 @@ canvas {
     color: #ff6b5e;
 }
 
+.codepanel-exec {
+    margin-bottom: 0.75rem;
+}
+
+.codepanel-exec-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem 0.75rem;
+    margin-bottom: 0.4rem;
+}
+
+.codepanel-exec-title {
+    min-width: 5.5rem;
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: #9aa4ad;
+}
+
+.codepanel-boxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.codepanel-box {
+    min-width: 5.5rem;
+    height: 1.6rem;
+    padding: 0 0.4rem;
+    border: 1px solid #2a3540;
+    border-radius: 3px;
+    background: #10161c;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    line-height: 1.5rem;
+    text-align: center;
+}
+
+.codepanel-box[data-state="taken"] {
+    border-color: #d9a53d;
+    background: #3a2f12;
+    color: #ffe29a;
+}
+
+.codepanel-restarts {
+    margin: 0;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.9rem;
+}
+
+.codepanel-restart-count {
+    color: #ffe29a;
+}
+
+.codepanel-cycle-steal {
+    color: #9aa4ad;
+}
+
+.scenario-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
 .codepanel-text {
     flex: 1 1 18rem;
 }

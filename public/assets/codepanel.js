@@ -40,6 +40,35 @@ function formatTime(seconds) {
     return `${Number(seconds).toFixed(1)} s`;
 }
 
+// A row of boxes for the core sets or the VAC areas of the Executive; a box shows the name of its job.
+function createBoxes(title, count) {
+    const group = element('div', 'codepanel-exec-group');
+    const heading = element('h3', 'codepanel-exec-title', title);
+    const list = element('ol', 'codepanel-boxes');
+    const boxes = [];
+    for (let index = 0; index < count; index += 1) {
+        const box = element('li', 'codepanel-box', '');
+        box.dataset.state = 'free';
+        boxes.push(box);
+    }
+    list.append(...boxes);
+    group.append(heading, list);
+
+    return {
+        group,
+        // Fills the boxes from a list of job names (null: free); any other value counts as free.
+        set(names) {
+            boxes.forEach((box, index) => {
+                const name = Array.isArray(names) ? names[index] : null;
+                const taken = typeof name === 'string' && name !== '';
+                box.textContent = taken ? name : '';
+                box.dataset.state = taken ? 'taken' : 'free';
+                box.setAttribute('aria-label', taken ? `${title} ${index + 1}: ${name}` : `${title} ${index + 1}: free`);
+            });
+        },
+    };
+}
+
 export function createCodePanel(root) {
     const program = element('p', 'codepanel-program');
     const routineLine = element('p', 'codepanel-routine');
@@ -47,12 +76,25 @@ export function createCodePanel(root) {
     const routineLink = element('a', 'codepanel-link');
     routineLine.append(routineLabel, routineLink);
 
+    const executive = element('div', 'codepanel-exec');
+    const executiveTitle = element('h2', 'codepanel-title', 'Executive');
+    const coreSets = createBoxes('Core sets', 7);
+    const vacAreas = createBoxes('VAC areas', 5);
+    const restarts = element('p', 'codepanel-restarts');
+    const restartLabel = element('span', 'codepanel-label', 'RESTART ');
+    const restartCount = element('strong', 'codepanel-restart-count', '0');
+    const cycleSteal = element('span', 'codepanel-cycle-steal', '');
+    restarts.append(restartLabel, restartCount, cycleSteal);
+    executive.append(executiveTitle, coreSets.group, vacAreas.group, restarts);
+    coreSets.set([]);
+    vacAreas.set([]);
+
     const logTitle = element('h2', 'codepanel-title', 'Log');
     const log = element('ol', 'codepanel-log');
     log.tabIndex = 0;
     log.setAttribute('aria-label', 'Log of DSKY input and AGC events, newest first');
 
-    root.replaceChildren(program, routineLine, logTitle, log);
+    root.replaceChildren(program, routineLine, executive, logTitle, log);
 
     let lastSeq = 0;
 
@@ -85,6 +127,14 @@ export function createCodePanel(root) {
                 routineLink.textContent = 'none';
                 routineLink.removeAttribute('href');
             }
+            const state = agc.executive;
+            if (state) {
+                coreSets.set(state.coreSets);
+                vacAreas.set(state.vacAreas);
+                restartCount.textContent = String(Number(state.restarts) || 0);
+                const steal = Math.round((Number(state.cycleSteal) || 0) * 100);
+                cycleSteal.textContent = steal > 0 ? ` · cycle steal ${steal}%` : '';
+            }
             for (const line of lines) {
                 if (line.seq > lastSeq) {
                     lastSeq = line.seq;
@@ -97,6 +147,10 @@ export function createCodePanel(root) {
             program.textContent = '';
             routineLink.textContent = '';
             routineLink.removeAttribute('href');
+            coreSets.set([]);
+            vacAreas.set([]);
+            restartCount.textContent = '0';
+            cycleSteal.textContent = '';
             log.replaceChildren();
         },
     };

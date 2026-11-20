@@ -9,8 +9,8 @@ use Apollo\Trace\EventLog;
 use Apollo\Trace\Routine;
 
 /**
- * State of one AGC: the computer, its DSKY, the event log, the major mode (0 = no program running),
- * the routine that ran last and mission time. The Executive joins it in a later slice.
+ * State of one AGC: the computer, its Executive and DSKY, the event log, the major mode (0 = no program
+ * running), the routine that ran last and mission time.
  *
  * This is a model of the state, not a port of one routine: the major mode is MODREG and mission time
  * is TIME2/TIME1 in the original.
@@ -20,6 +20,7 @@ use Apollo\Trace\Routine;
  */
 final class Agc
 {
+    public readonly Executive $executive;
     public readonly Dsky $dsky;
     public readonly EventLog $log;
 
@@ -29,6 +30,7 @@ final class Agc
         public float $missionTime = 0.0,
         public ?Routine $currentRoutine = null,
     ) {
+        $this->executive = new Executive();
         $this->log = new EventLog();
         $this->dsky = new Dsky($computer, $this->log);
     }

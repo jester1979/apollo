@@ -72,6 +72,24 @@ final class RoutineTest extends TestCase
         self::assertSame([], $lines, 'every landing routine is a case');
     }
 
+    public function testTheLabelsOfTheExecutiveRoutinesPointAtTheirLines(): void
+    {
+        $lines = [
+            'FINDVAC2' => ['Luminary099/EXECUTIVE.agc', 133],
+            'NOVAC2' => ['Luminary099/EXECUTIVE.agc', 155],
+            'BAILOUT' => ['Luminary099/ALARM_AND_ABORT.agc', 133],
+            'GOPROG' => ['Luminary099/FRESH_START_AND_RESTART.agc', 206],
+        ];
+        foreach (Routine::cases() as $routine) {
+            if (isset($lines[$routine->label()])) {
+                self::assertSame($lines[$routine->label()], [$routine->file(), $routine->line()], $routine->label());
+                unset($lines[$routine->label()]);
+            }
+        }
+
+        self::assertSame([], $lines, 'every Executive routine is a case');
+    }
+
     public function testNoTwoRoutinesShareALabel(): void
     {
         $labels = array_map(static fn (Routine $routine): string => $routine->label(), Routine::cases());

@@ -22,6 +22,10 @@ header('Content-Type: text/html; charset=utf-8');
     <main>
         <div class="controls">
             <button type="button" id="start">Start landing</button>
+            <label class="scenario-switch">
+                <input type="checkbox" id="scenario">
+                <span>Apollo 11 scenario (1201/1202 alarms)</span>
+            </label>
             <span id="status" role="status" aria-live="polite"></span>
         </div>
         <div class="stage">

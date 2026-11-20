@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Apollo\Chapter\Landing;
 
 use Apollo\Agc\Agc;
+use Apollo\Agc\Executive;
 use Apollo\Chapter\Chapter;
 use Apollo\Chapter\ChapterId;
 use Apollo\Chapter\Outcome;
@@ -34,12 +35,23 @@ use Apollo\Trace\Routine;
  * 3 m/s vertical and 1.2 m/s horizontal, crashed above, out of fuel when the tank runs dry first.
  * The DSKY shows V06N63 in P63, V06N64 in P64 and V06N60 in P65 and P66, COMP ACTY lights while the
  * guidance computes. The keys of the user are handled by the Dsky; this chapter reads what they
- * asked for (PRO, V37, the nouns of a user display) and the ROD clicks of the tick.
+ * asked for (PRO, RSET, V37, the nouns of a user display) and the ROD clicks of the tick.
+ *
+ * The Executive carries the load: the SERVICER (the guidance pass and the physics measurement) every
+ * 2 s through FINDVAC, a radar job every second and a display job per monitor through NOVAC (see
+ * LandingLoad). Each job holds a core set (the SERVICER also a VAC area) until its cost is used up. In
+ * the Apollo 11 scenario the cycle steal leaves too little time, the jobs pile up and FINDVAC or NOVAC
+ * raises 1201 or 1202: PROG lights, N09 keeps the code, BAILOUT and GOPROG drop all jobs and the
+ * chapter schedules them again like the restart tables. The guidance and the physics go on; the
+ * load only models the time they take, it does not delay them.
  *
  * @see Luminary099/THE_LUNAR_LANDING.agc P63LM
  * @see Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc BURNBABY
  * @see Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc V99RECYC
  * @see Luminary099/SERVICER.agc SERVICER
+ * @see Luminary099/EXECUTIVE.agc FINDVAC2
+ * @see Luminary099/ALARM_AND_ABORT.agc BAILOUT
+ * @see Luminary099/FRESH_START_AND_RESTART.agc GOPROG
  * @see Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc P63DISPS
  * @see Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc STARTP64
  * @see Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc P65START
@@ -93,8 +105,11 @@ final class LandingChapter implements Chapter
     private bool $guidedThisStep = false;
     private ?Outcome $outcome = null;
 
-    /** @param StateVector|null $state start state; the PDI state of the chapter when omitted */
-    public function __construct(?StateVector $state = null)
+    /**
+     * @param StateVector|null $state start state; the PDI state of the chapter when omitted
+     * @param bool $scenario the Apollo 11 scenario: the rendezvous radar steals cycles from the Executive
+     */
+    public function __construct(?StateVector $state = null, bool $scenario = false)
     {
         $this->state = $state ?? StartStates::landingState();
         $this->vehicle = StartStates::landingVehicle();
@@ -111,6 +126,9 @@ final class LandingChapter implements Chapter
             StartStates::LANDING_SITE_DOWNRANGE / Body::Moon->radius(),
         );
         $this->rod = new RateOfDescent($this->approachGuidance);
+        if ($scenario) {
+            $this->agc->executive->setCycleSteal(LandingLoad::SCENARIO_CYCLE_STEAL);
+        }
         $this->agc->dsky->showMajorMode($this->agc->majorMode);
         $this->displayProgram();
         $this->logAgc('P63 starts: the lander coasts towards TIG', Routine::P63Lm);
@@ -139,6 +157,7 @@ final class LandingChapter implements Chapter
         $this->clickRod($input->rod);
         $this->supplyUserDisplay(false);
         for ($i = 0; $i < $steps && $this->outcome === null; $i++) {
+            $this->runExecutive();
             $burnStep = $this->ignitionStep === null ? null : $this->steps - $this->ignitionStep;
             if ($burnStep !== null && $burnStep >= self::IGNITION_STEPS && $burnStep % $this->guidanceSteps() === 0) {
                 $this->guide($burnStep);
@@ -192,6 +211,9 @@ final class LandingChapter implements Chapter
         if ($dsky->takeProceed() && $this->awaitingEngineEnable()) {
             $this->ignite();
         }
+        if ($dsky->takeReset()) {
+            $this->agc->executive->clearAlarmCodes(); // ERROR zeroes FAILREG along with the PROG light
+        }
 
         $program = $dsky->takeProgramChange();
         if ($program === 0) {
@@ -231,6 +253,87 @@ final class LandingChapter implements Chapter
         $this->agc->dsky->showMajorMode(0);
         $this->outcome = Outcome::Missed;
         $this->logAgc('P63 → P00: the engine goes off, the guidance stops', Routine::V37);
+    }
+
+    /**
+     * One 0.1 s of Executive time. On the second the radar job (and a display job per monitor) is
+     * scheduled with NOVAC, and every 2 s the SERVICER with FINDVAC; then the jobs run. A request that
+     * finds no core set or VAC area raises an alarm, which restarts the computer.
+     */
+    private function runExecutive(): void
+    {
+        $executive = $this->agc->executive;
+        $this->scheduleDueJobs();
+        $executive->run(Integrator::STEP);
+    }
+
+    /** Stops at the first alarm: the restart has scheduled the jobs of this moment already. */
+    private function scheduleDueJobs(): void
+    {
+        $executive = $this->agc->executive;
+        $requests = [];
+        if ($this->steps % LandingLoad::SECOND_STEPS === 0) {
+            $requests[] = [LandingLoad::radar(), false];
+            if ($this->agc->dsky->isMonitoring()) {
+                $requests[] = [LandingLoad::display(), false];
+            }
+        }
+        if ($this->steps % LandingLoad::SERVICER_PERIOD_STEPS === 0) {
+            $requests[] = [LandingLoad::servicer(), true];
+        }
+
+        foreach ($requests as [$job, $needsVacArea]) {
+            if ($needsVacArea) {
+                $executive->findvac($job);
+            } else {
+                $executive->novac($job);
+            }
+            if ($this->handleAlarm()) {
+                return;
+            }
+        }
+    }
+
+    /** True when the Executive raised an alarm, which was then handled by a restart. */
+    private function handleAlarm(): bool
+    {
+        $code = $this->agc->executive->takeAlarm();
+        if ($code === null) {
+            return false;
+        }
+
+        $this->agc->dsky->setLight(Light::Prog, true);
+        $this->agc->log->record(
+            LogKind::Alarm,
+            sprintf(
+                'Program alarm %04o: no %s free, PROG light on, code kept in N09',
+                $code,
+                $code === Executive::ALARM_NO_VAC_AREAS ? 'VAC area' : 'core set',
+            ),
+            $code === Executive::ALARM_NO_VAC_AREAS ? Routine::FindVac : Routine::NoVac,
+            $this->agc->missionTime,
+        );
+
+        $this->agc->executive->bailout($code);
+        $this->agc->currentRoutine = Routine::GoProg;
+        $this->logAgc(
+            sprintf('BAILOUT, GOPROG: all jobs dropped, restart %d, the restart tables schedule SERVICER, radar and display again', $this->agc->executive->snapshot()['restarts']),
+            Routine::GoProg,
+        );
+        $this->scheduleAfterRestart();
+
+        return true;
+    }
+
+    /** The restart tables: the jobs of the landing start again, with nothing in the way. */
+    private function scheduleAfterRestart(): void
+    {
+        $executive = $this->agc->executive;
+        $executive->findvac(LandingLoad::servicer());
+        $executive->novac(LandingLoad::radar());
+        if ($this->agc->dsky->isMonitoring()) {
+            $executive->novac(LandingLoad::display());
+        }
     }
 
     /** What happens after each 0.1 s step: the V99 display and the refreshes of the displays. */
@@ -444,8 +547,8 @@ final class LandingChapter implements Chapter
         $speedUp = $this->state->radialVelocity();
 
         return match ($noun) {
-            // 09: alarm codes; no program alarm exists yet.
-            9 => [0.0, 0.0, 0.0],
+            // 09: the three alarm registers (octal).
+            9 => array_map(floatval(...), $this->agc->executive->alarmCodes()),
             // 60: horizontal velocity, altitude rate, computed altitude.
             60 => [$this->state->horizontalVelocity(), $speedUp, $altitude],
             // 63: absolute value of velocity, altitude rate, computed altitude.

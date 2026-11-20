@@ -25,7 +25,7 @@ class Simulation
     public function start(ChapterId $id, bool $scenario): array
     {
         $this->chapter = match ($id) {
-            ChapterId::Landing => new LandingChapter(),
+            ChapterId::Landing => new LandingChapter(null, $scenario),
             default => throw new ChapterNotAvailable(),
         };
         $this->scenario = $scenario;
@@ -74,16 +74,10 @@ class Simulation
             'outcome' => $chapter->outcome()?->value,
             'dsky' => $agc->dsky->toArray(),
             'vehicle' => $chapter->vehicleView(),
-            // Placeholder until the Executive (slice 7) exists.
             'agc' => [
                 'routine' => $agc->currentRoutine?->toArray(),
                 'program' => $this->programName($agc->majorMode),
-                'executive' => [
-                    'coreSets' => array_fill(0, 7, null),
-                    'vacAreas' => array_fill(0, 5, null),
-                    'cycleSteal' => 0.0,
-                    'restarts' => 0,
-                ],
+                'executive' => $agc->executive->snapshot(),
             ],
             'log' => $agc->log->takeNew(),
         ];

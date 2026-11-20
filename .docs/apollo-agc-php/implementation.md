@@ -153,3 +153,24 @@ Verified by two builders. `vendor/bin/phpunit` passed with 62 tests and 2882 ass
 - `tests/Chapter/LandingChapterTest.php`: updated for the chapter flying on past P64; display, log and click tests
 - `tests/Simulation/SimulationTest.php`: a hands-off success run and a rod click through a tick
 - `tests/Trace/RoutineTest.php`: line-number check for the new routines
+
+### 7. Executive en het Apollo 11-scenario
+
+`vendor/bin/phpunit` passed with 164 tests and 30115 assertions, including `ExecutiveTest` and `LandingScenarioTest`, and `vendor/bin/phpstan analyse` reported no errors. A hands-off landing in PHP with PRO at t=5 s succeeded at t=903 s with 5.87% fuel, with 0 restarts without the scenario and 16 with it. In Chrome with the switch "Apollo 11 scenario (1201/1202 alarms)" on, the code panel showed a cycle steal of 15%, and a screenshot just before the first alarm showed 5 of 5 VAC areas and 6 of 7 core sets taken. At t=54.0 s in P63 the PROG light came on, `V05N09 ENTR` showed R1 `01201`, the RESTART counter read 1, and RSET put PROG out. That run ended in `success` with 16 restarts. With the switch off a run ended in `success` with no alarm. Only 1201 occurred in the browser runs; 1202 is covered by the unit tests.
+
+- `src/Agc/Executive.php`: 7 core sets, 5 VAC areas, `novac`, `findvac`, `run`, `setCycleSteal`, `bailout` and `snapshot` as in plan §6, plus `takeAlarm()`, `alarmCodes()` and `clearAlarmCodes()`
+- `src/Agc/Job.php`: a job as plain data (name, priority, cpuCost, remaining cost)
+- `src/Agc/ProgramAlarm.php`: the three alarm registers that N09 shows; RSET clears them
+- `src/Chapter/Landing/LandingLoad.php`: job costs, priorities, periods and the 0.15 cycle steal as constants
+- `src/Agc/Agc.php`: the AGC owns the Executive
+- `src/Chapter/Landing/LandingChapter.php`: takes the scenario flag; schedules radar, display and SERVICER jobs and runs the Executive every step; on an alarm lights PROG, logs it, calls `bailout()` and re-registers the jobs
+- `src/Dsky/Dsky.php`: `takeReset()` and `isMonitoring()`
+- `src/Simulation/Simulation.php`: `start()` passes the scenario to the chapter; `agc.executive` comes from the Executive snapshot
+- `src/Trace/Routine.php`: FindVac, NoVac, Bailout and GoProg
+- `public/index.php`: the scenario switch next to the start button
+- `public/assets/app.js`: start sends the scenario; the switch is disabled during a run
+- `public/assets/codepanel.js`: 7 core-set boxes and 5 VAC boxes with job names, the RESTART counter and the cycle steal
+- `public/assets/style.css`: styles for the boxes, the counter and the switch
+- `tests/Agc/ExecutiveTest.php`: 1202 on the 8th `novac`, 1201 on the 6th `findvac`, bailout, priority order, cycle steal, serialization
+- `tests/Chapter/LandingScenarioTest.php`: no alarms without the scenario; with it an alarm in P63 or P64, PROG lit, V05N09 showing the code, landing success
+- `tests/Trace/RoutineTest.php`: labels, files and lines of the four Executive routines

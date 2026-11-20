@@ -8,6 +8,7 @@ const TICK_INTERVAL_MS = 100;
 const views = { landing: renderLanding };
 
 const startButton = document.getElementById('start');
+const scenarioSwitch = document.getElementById('scenario');
 const statusLine = document.getElementById('status');
 const outcomeLine = document.getElementById('outcome');
 const canvas = document.getElementById('view');
@@ -95,6 +96,7 @@ function delay(ms) {
 async function run() {
     const myRun = ++runId;
     startButton.disabled = true;
+    scenarioSwitch.disabled = true;
     pendingKeys.length = 0;
     pendingRod = 0;
     running = true;
@@ -105,7 +107,7 @@ async function run() {
     statusLine.textContent = 'Starting…';
 
     try {
-        let state = await post({ action: 'start', chapter: 'landing', scenario: false });
+        let state = await post({ action: 'start', chapter: 'landing', scenario: scenarioSwitch.checked });
         show(state);
 
         // One tick in flight at a time: await the answer, render, then wait.
@@ -129,6 +131,7 @@ async function run() {
             dsky.setEnabled(false);
         }
         startButton.disabled = false;
+        scenarioSwitch.disabled = false;
         startButton.textContent = 'Start again';
     }
 }

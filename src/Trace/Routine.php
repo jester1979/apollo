@@ -38,6 +38,10 @@ enum Routine
     case ErrorReset;   // Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc:3732
     case V37;          // Luminary099/FRESH_START_AND_RESTART.agc:739
     case V37NoNo;      // Luminary099/FRESH_START_AND_RESTART.agc:978
+    case FindVac;      // Luminary099/EXECUTIVE.agc:133 (FINDVAC2)
+    case NoVac;        // Luminary099/EXECUTIVE.agc:155 (NOVAC2)
+    case Bailout;      // Luminary099/ALARM_AND_ABORT.agc:133
+    case GoProg;       // Luminary099/FRESH_START_AND_RESTART.agc:206
 
     public const COMMIT = 'e7576d50f7c279a707cfaa71be2020592dbf43a8';
 
@@ -71,6 +75,10 @@ enum Routine
             self::ErrorReset => 'ERROR',
             self::V37 => 'V37',
             self::V37NoNo => 'V37NONO',
+            self::FindVac => 'FINDVAC2',
+            self::NoVac => 'NOVAC2',
+            self::Bailout => 'BAILOUT',
+            self::GoProg => 'GOPROG',
         };
     }
 
@@ -85,7 +93,9 @@ enum Routine
             self::BurnBaby, self::V99Recyc, self::P63Zoom => 'Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc',
             self::Num, self::Verb, self::Noun, self::Clear, self::Enter, self::VerbFan, self::CharAlrm,
             self::ProcKey, self::VbRelDsp, self::VbTstLts, self::ErrorReset => 'Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc',
-            self::V37, self::V37NoNo => 'Luminary099/FRESH_START_AND_RESTART.agc',
+            self::V37, self::V37NoNo, self::GoProg => 'Luminary099/FRESH_START_AND_RESTART.agc',
+            self::FindVac, self::NoVac => 'Luminary099/EXECUTIVE.agc',
+            self::Bailout => 'Luminary099/ALARM_AND_ABORT.agc',
         };
     }
 
@@ -119,6 +129,10 @@ enum Routine
             self::ErrorReset => 3732,
             self::V37 => 739,
             self::V37NoNo => 978,
+            self::FindVac => 133,
+            self::NoVac => 155,
+            self::Bailout => 133,
+            self::GoProg => 206,
         };
     }
 
