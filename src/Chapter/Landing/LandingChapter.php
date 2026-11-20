@@ -27,8 +27,9 @@ use Apollo\Trace\Routine;
 /**
  * The landing chapter. P63 starts with the lander coasting towards TIG. From TIG-5 s the DSKY flashes
  * V99N63 (please enable engine); PRO ignites the descent engine at minimum throttle, it goes flat
- * out after 26 s and from then on the braking guidance (P63, QUADGUID) steers it every 2 s. Without
- * PRO there is no ignition and V99N63 keeps flashing. P63 hands over to P64 at high gate, which
+ * out after 26 s and from then on the braking guidance (P63, QUADGUID) steers it every 2 s. A late
+ * PRO moves the landing site along with the ignition point. Without PRO there is no ignition and
+ * V99N63 keeps flashing, until after IGNITION_WAIT_SECONDS the landing is missed. P63 hands over to P64 at high gate, which
  * runs the approach guidance (QUADGUID with the approach targets) and below 200 m P65 lands the
  * vehicle at 3 ft/s by itself. A ROD click during P64 or P65 switches to P66 (STARTP66), where every
  * click changes the desired descent rate by 1 ft/s. The chapter ends at contact: success below
@@ -75,6 +76,12 @@ final class LandingChapter implements Chapter
     /** V99 is displayed from TIG-5 s (V99RECYC: "it is initiated at TIG-5 sec"). */
     private const ENABLE_ENGINE_STEPS = self::TIG_STEPS - 50;
 
+    /**
+     * Without PRO the ignition is not confirmed and the landing is missed: V99 waits this long, counted
+     * from the start of the chapter, in seconds of mission time.
+     */
+    public const IGNITION_WAIT_SECONDS = 300.0;
+
     /** In P66 the ROD task runs every second (P66VERTA: RODTASK is twiddled in 1 SEC). */
     private const ROD_STEPS = 10;
 
@@ -100,6 +107,10 @@ final class LandingChapter implements Chapter
     private readonly RateOfDescent $rod;
     private readonly Throttle $throttle;
     private int $steps = 0;
+    /** Ground-track angle of the landing site; it moves with a late ignition, see ignite(). */
+    private float $siteAngle;
+    /** Ground-track angle of the lander when V99 started to flash: the ignition point of the nominal landing. */
+    private ?float $angleAtEnableEngine = null;
     private ?int $ignitionStep = null;
     private ?int $lastGuidanceStep = null;
     private bool $guidedThisStep = false;
@@ -115,15 +126,16 @@ final class LandingChapter implements Chapter
         $this->vehicle = StartStates::landingVehicle();
         $this->startFuelMass = $this->vehicle->fuelMass();
         $this->integrator = new Integrator();
+        $this->siteAngle = StartStates::LANDING_SITE_DOWNRANGE / Body::Moon->radius();
         $this->agc = new Agc(ChapterId::Landing->computer(), 63, 0.0, Routine::P63Lm);
         $this->throttle = new Throttle();
         $this->guidance = new LandingGuidance(
             LandingTargets::braking(),
-            StartStates::LANDING_SITE_DOWNRANGE / Body::Moon->radius(),
+            $this->siteAngle,
         );
         $this->approachGuidance = new LandingGuidance(
             LandingTargets::approach(),
-            StartStates::LANDING_SITE_DOWNRANGE / Body::Moon->radius(),
+            $this->siteAngle,
         );
         $this->rod = new RateOfDescent($this->approachGuidance);
         if ($scenario) {
@@ -170,6 +182,7 @@ final class LandingChapter implements Chapter
             $this->steps++;
             $this->checkContact();
             $this->checkFuel();
+            $this->checkIgnitionWait();
             if ($this->outcome === null) {
                 $this->afterStep();
             }
@@ -190,7 +203,7 @@ final class LandingChapter implements Chapter
             'pitch' => round($this->vehicle->pitch, 4),
             'throttle' => round($this->vehicle->throttle, 4),
             'fuel' => round($this->vehicle->fuelMass() / $this->startFuelMass, 4),
-            'target' => round(StartStates::LANDING_SITE_DOWNRANGE - $downrange, 1),
+            'target' => round(Body::Moon->radius() * $this->siteAngle - $downrange, 1),
             'program' => $this->agc->majorMode,
             'desiredRate' => $this->agc->majorMode === 66 ? round($this->rod->desiredRate(), 3) : null,
         ];
@@ -235,9 +248,24 @@ final class LandingChapter implements Chapter
         return $this->ignitionStep === null && $this->outcome === null && $this->steps >= self::ENABLE_ENGINE_STEPS;
     }
 
-    /** PRO on V99: BURNBABY ignites the DPS at minimum throttle, thrusting against the direction of flight. */
+    /**
+     * PRO on V99: BURNBABY ignites the DPS at minimum throttle, thrusting against the direction of flight.
+     * The landing site lies ahead of the ignition point, not of the start of the chapter: a PRO that comes
+     * after TIG-5 s finds the lander further along the orbit, and the site moves along by that distance, so
+     * the braking guidance aims at a point it can still reach (PDI is where the burn starts).
+     */
     private function ignite(): void
     {
+        $late = $this->state->angle() - ($this->angleAtEnableEngine ?? $this->state->angle());
+        if ($late > 0.0) {
+            $this->siteAngle += $late;
+            $this->guidance->placeSite($this->siteAngle);
+            $this->approachGuidance->placeSite($this->siteAngle);
+            $this->logAgc(
+                sprintf('Late ignition: the landing site moves %.1f km down the track with the ignition point', $late * Body::Moon->radius() / 1000.0),
+                Routine::BurnBaby,
+            );
+        }
         $this->ignitionStep = $this->steps;
         $this->vehicle->throttle = Throttle::MINIMUM;
         $this->agc->currentRoutine = Routine::BurnBaby;
@@ -339,6 +367,9 @@ final class LandingChapter implements Chapter
     /** What happens after each 0.1 s step: the V99 display and the refreshes of the displays. */
     private function afterStep(): void
     {
+        if ($this->steps === self::ENABLE_ENGINE_STEPS) {
+            $this->angleAtEnableEngine = $this->state->angle();
+        }
         if ($this->steps === self::ENABLE_ENGINE_STEPS || $this->steps % $this->guidanceSteps() === 0) {
             $this->displayProgram();
         }
@@ -489,6 +520,21 @@ final class LandingChapter implements Chapter
         );
     }
 
+    /** V99 waits for PRO a few minutes, then the ignition counts as not confirmed and the landing is missed. */
+    private function checkIgnitionWait(): void
+    {
+        if ($this->outcome !== null || $this->ignitionStep !== null) {
+            return;
+        }
+        if ($this->steps < (int) round(self::IGNITION_WAIT_SECONDS / Integrator::STEP)) {
+            return;
+        }
+
+        $this->outcome = Outcome::Missed;
+        $this->logAgc('No PRO: the ignition was not confirmed, the landing is missed', Routine::V99Recyc);
+        $this->displayProgram();
+    }
+
     /** The tank is empty before the lander touches down: nothing can save the landing any more. */
     private function checkFuel(): void
     {
@@ -565,7 +611,7 @@ final class LandingChapter implements Chapter
     /** Distance to the landing site: the ground distance still to cover and the altitude, in metres. */
     private function slantRange(): float
     {
-        $groundRange = StartStates::LANDING_SITE_DOWNRANGE - Body::Moon->radius() * $this->state->angle();
+        $groundRange = Body::Moon->radius() * ($this->siteAngle - $this->state->angle());
 
         return hypot($groundRange, max(0.0, $this->state->altitude(Body::Moon)));
     }

@@ -203,3 +203,11 @@ Verified by two builders. `vendor/bin/phpunit` passed with 62 tests and 2882 ass
 - `tests/Dsky/NounTableTest.php`: CM N62
 - `tests/Trace/RoutineTest.php`: P11 and VHHDOT point at their file and line
 - `tests/Simulation/SimulationTest.php`, `tests/Http/ApiControllerTest.php`: the unbuilt-chapter tests now use LOI
+
+### Fix between slices 8 and 9: a late PRO in the landing
+
+The builder of slice 7 reported that a landing with PRO at about t=20 s ended `crashed`, and that the chapter never ended without PRO. A fix pass found the cause: the landing site was fixed at 481 km from the chapter start, while the ignition point moves about 1.69 km per second of delay. The new tests failed on the unfixed code for PRO at 20, 40 and 60 s (`Crashed`) and pass after the fix. Hands-off landings now succeed for PRO at 5, 10, 20, 40 and 60 s, with and without the scenario, with 5.85% to 6.69% fuel left. `vendor/bin/phpunit` passed with 201 tests and 30244 assertions, with no existing test changed, and `vendor/bin/phpstan analyse` reported no errors. This is a standalone commit because the paths belong to slices 2, 4, 6 and 7.
+
+- `src/Chapter/Landing/LandingChapter.php`: the landing site moves down the track with the ignition point; without PRO the chapter ends `missed` after `IGNITION_WAIT_SECONDS` (300 s) with an `agc` log line
+- `src/Guidance/Luminary/LandingGuidance.php`: `placeSite()` moves the site for the braking, approach and ROD guidance
+- `tests/Chapter/LandingLateProTest.php`: success with fuel left for PRO at 5, 10, 20, 40 and 60 s, scenario off and on; `missed` without PRO

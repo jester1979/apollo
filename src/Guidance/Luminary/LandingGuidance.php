@@ -37,8 +37,14 @@ final class LandingGuidance
     public function __construct(
         private readonly LandingTargets $targets,
         /** Ground-track angle of the landing site in radians, clockwise from the +y axis. */
-        private readonly float $siteAngle,
+        private float $siteAngle,
     ) {
+    }
+
+    /** Moves the landing site to another ground-track angle, in radians (the site belongs to the ignition point). */
+    public function placeSite(float $siteAngle): void
+    {
+        $this->siteAngle = $siteAngle;
     }
 
     /** Time to go of the last pass, negative; null before the first pass. */
