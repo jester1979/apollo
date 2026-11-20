@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Apollo\Http;
 
-use Apollo\Simulation\SessionStore;
+use Apollo\Simulation\SimulationStore;
 use Apollo\Simulation\Simulation;
 
 /**
- * Public endpoint: there is no user data, and every visitor has a private session. Cross-site
+ * Public endpoint: there is no user data, and every visitor has a private session with one simulation
+ * per browser tab. Cross-site
  * requests are stopped by the JSON content type rule (needs a CORS preflight, which this
  * endpoint never grants) and by the SameSite=Strict session cookie.
  */
@@ -20,7 +21,7 @@ final class ApiController
     /**
      * @param (\Closure(string): void)|null $logger receives the details of an internal error; defaults to error_log()
      */
-    public function __construct(private readonly SessionStore $store, ?\Closure $logger = null)
+    public function __construct(private readonly SimulationStore $store, ?\Closure $logger = null)
     {
         $this->logger = $logger ?? static function (string $message): void {
             error_log($message);
@@ -30,21 +31,30 @@ final class ApiController
     public function handle(string $method, string $contentType, string $body): ApiResponse
     {
         try {
-            $simulation = $this->store->simulation();
-            $request = TickRequest::fromHttp($method, $contentType, $body, $simulation !== null);
+            $simulation = null;
+            $request = TickRequest::fromHttp(
+                $method,
+                $contentType,
+                $body,
+                function (string $tab) use (&$simulation): bool {
+                    $simulation = $this->store->simulation($tab);
+
+                    return $simulation !== null;
+                },
+            );
 
             if ($request->action === Action::Start) {
                 $simulation = new Simulation();
                 assert($request->chapter !== null);
                 $response = $simulation->start($request->chapter, $request->scenario);
-                $this->store->save($simulation);
+                $this->store->save($request->tab, $simulation);
 
                 return new ApiResponse(200, $response);
             }
 
             assert($simulation !== null && $request->input !== null);
             $response = $simulation->tick($request->input);
-            $this->store->save($simulation);
+            $this->store->save($request->tab, $simulation);
 
             return new ApiResponse(200, $response);
         } catch (InvalidRequest $e) {

@@ -1,4 +1,4 @@
-- [chrome-devtools browser checks](chrome-devtools-profile-lock.md) — the shared profile lock, one tab per session, screenshots without `filePath`
+- [chrome-devtools browser checks](chrome-devtools-profile-lock.md) — the shared profile lock, screenshots without `filePath`
 - [Session objects hold no closures](session-objects-hold-no-closures.md) — the Simulation graph is serialized into the session on every request
 - [Landing fuel budget](landing-fuel-budget.md) — hands-off landing ends with about 6% fuel; re-run it after any change to targets, start state or mass
 - [New noun needs values in every chapter](new-noun-needs-values-in-every-chapter.md) — a missing `nounValues()` case in another chapter of the same computer returns a 500

@@ -196,6 +196,9 @@ final class EntryChapter implements Chapter
         }
 
         $program = $dsky->takeProgramChange();
+        if ($this->outcome !== null) {
+            return; // The chapter has ended: a V37 no longer changes how it ended.
+        }
         if ($program === 0) {
             $this->stopGuidance();
         } elseif ($program !== null) {

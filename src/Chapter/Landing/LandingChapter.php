@@ -229,6 +229,9 @@ final class LandingChapter implements Chapter
         }
 
         $program = $dsky->takeProgramChange();
+        if ($this->outcome !== null) {
+            return; // The chapter has ended: a V37 no longer changes how it ended.
+        }
         if ($program === 0) {
             $this->stopGuidance();
         } elseif ($program !== null) {
@@ -252,17 +255,24 @@ final class LandingChapter implements Chapter
      * PRO on V99: BURNBABY ignites the DPS at minimum throttle, thrusting against the direction of flight.
      * The landing site lies ahead of the ignition point, not of the start of the chapter: a PRO that comes
      * after TIG-5 s finds the lander further along the orbit, and the site moves along by that distance, so
-     * the braking guidance aims at a point it can still reach (PDI is where the burn starts).
+     * the braking guidance aims at a point it can still reach (PDI is where the burn starts). A PRO up to
+     * and including TIG is on time; only one after TIG is logged as a late ignition.
      */
     private function ignite(): void
     {
-        $late = $this->state->angle() - ($this->angleAtEnableEngine ?? $this->state->angle());
-        if ($late > 0.0) {
-            $this->siteAngle += $late;
+        $travelled = $this->state->angle() - ($this->angleAtEnableEngine ?? $this->state->angle());
+        if ($travelled > 0.0) {
+            $this->siteAngle += $travelled;
             $this->guidance->placeSite($this->siteAngle);
             $this->approachGuidance->placeSite($this->siteAngle);
+        }
+        if ($this->steps > self::TIG_STEPS) {
             $this->logAgc(
-                sprintf('Late ignition: the landing site moves %.1f km down the track with the ignition point', $late * Body::Moon->radius() / 1000.0),
+                sprintf(
+                    'Late ignition, %.0f s after TIG: the landing site moves %.1f km down the track with the ignition point',
+                    ($this->steps - self::TIG_STEPS) * Integrator::STEP,
+                    $travelled * Body::Moon->radius() / 1000.0,
+                ),
                 Routine::BurnBaby,
             );
         }

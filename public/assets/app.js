@@ -117,12 +117,15 @@ function updateScenarioSwitch() {
 
 chooser.addEventListener('change', updateScenarioSwitch);
 
+// Each tab has its own simulation on the server: the id is made up once per page load.
+const TAB_ID = Array.from(crypto.getRandomValues(new Uint8Array(8)), (byte) => byte.toString(16).padStart(2, '0')).join('');
+
 async function post(payload) {
     const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, tab: TAB_ID }),
     });
 
     let data;

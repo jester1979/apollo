@@ -21,6 +21,7 @@ final readonly class TickRequest
 
     private function __construct(
         public Action $action,
+        public string $tab,
         public ?ChapterId $chapter,
         public bool $scenario,
         public ?TickInput $input,
@@ -28,9 +29,10 @@ final readonly class TickRequest
     }
 
     /**
+     * @param \Closure(string): bool $simulationStarted whether the tab with this id has a started simulation
      * @throws InvalidRequest
      */
-    public static function fromHttp(string $method, string $contentType, string $body, bool $simulationStarted): self
+    public static function fromHttp(string $method, string $contentType, string $body, \Closure $simulationStarted): self
     {
         // 1. Method
         if ($method !== 'POST') {
@@ -58,9 +60,14 @@ final readonly class TickRequest
         if ($action === null) {
             throw new InvalidRequest(400, 'Unknown action');
         }
+        // 6. Tab: the id the page made up for itself, which keeps the runs of two tabs apart
+        $tab = $data['tab'] ?? null;
+        if (!is_string($tab) || preg_match('/\A[a-f0-9]{16}\z/', $tab) !== 1) {
+            throw new InvalidRequest(400, 'Invalid tab');
+        }
 
         if ($action === Action::Start) {
-            // 6. Chapter and scenario
+            // 7. Chapter and scenario
             $chapter = is_string($data['chapter'] ?? null) ? ChapterId::tryFrom($data['chapter']) : null;
             if ($chapter === null) {
                 throw new InvalidRequest(400, 'Invalid chapter');
@@ -70,10 +77,10 @@ final readonly class TickRequest
                 throw new InvalidRequest(400, 'Invalid scenario');
             }
 
-            return new self($action, $chapter, $scenario, null);
+            return new self($action, $tab, $chapter, $scenario, null);
         }
 
-        // 7. Keys
+        // 8. Keys
         $rawKeys = $data['keys'] ?? null;
         if (!is_array($rawKeys) || !array_is_list($rawKeys) || count($rawKeys) > self::MAX_KEYS) {
             throw new InvalidRequest(400, 'Invalid keys');
@@ -86,21 +93,21 @@ final readonly class TickRequest
             }
             $keys[] = $key;
         }
-        // 8. ROD clicks
+        // 9. ROD clicks
         $rod = $data['rod'] ?? null;
         if (!is_int($rod) || abs($rod) > self::MAX_ROD) {
             throw new InvalidRequest(400, 'Invalid rod');
         }
-        // 9. Speed
+        // 10. Speed
         $speed = $data['speed'] ?? null;
         if (!is_int($speed) || !in_array($speed, self::SPEEDS, true)) {
             throw new InvalidRequest(400, 'Invalid speed');
         }
-        // 10. A started simulation
-        if (!$simulationStarted) {
+        // 11. A started simulation
+        if (!$simulationStarted($tab)) {
             throw new InvalidRequest(409, 'No simulation started');
         }
 
-        return new self($action, null, false, new TickInput($keys, $rod, $speed));
+        return new self($action, $tab, null, false, new TickInput($keys, $rod, $speed));
     }
 }

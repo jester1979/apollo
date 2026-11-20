@@ -19,7 +19,7 @@ composer install
 composer serve
 ```
 
-`composer serve` runs `php -S 127.0.0.1:8000 -t public`; you can run that command yourself instead. Then open <http://127.0.0.1:8000/>, pick a chapter, and press "Start chapter". The simulation state lives in your PHP session, so each visitor flies a private mission.
+`composer serve` runs `php -S 127.0.0.1:8000 -t public`; you can run that command yourself instead. Then open <http://127.0.0.1:8000/>, pick a chapter, and press "Start chapter". The simulation state lives in your PHP session, one simulation per browser tab, so each visitor flies a private mission.
 
 ## Using the page
 

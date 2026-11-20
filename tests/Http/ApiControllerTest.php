@@ -8,13 +8,16 @@ use Apollo\Chapter\ChapterId;
 use Apollo\Http\ApiController;
 use Apollo\Simulation\SessionStore;
 use Apollo\Simulation\Simulation;
+use Apollo\Simulation\SimulationStore;
 use Apollo\Simulation\TickInput;
 use PHPUnit\Framework\TestCase;
 
 final class ApiControllerTest extends TestCase
 {
-    private const START = '{"action":"start","chapter":"landing","scenario":false}';
-    private const TICK = '{"action":"tick","keys":[],"rod":0,"speed":1}';
+    private const TAB = '0123456789abcdef';
+    private const OTHER_TAB = 'fedcba9876543210';
+    private const START = '{"action":"start","tab":"0123456789abcdef","chapter":"landing","scenario":false}';
+    private const TICK = '{"action":"tick","tab":"0123456789abcdef","keys":[],"rod":0,"speed":1}';
 
     public function testAnErrorHasOnlyAnErrorField(): void
     {
@@ -40,7 +43,7 @@ final class ApiControllerTest extends TestCase
         self::assertSame(200, $tick->status);
         self::assertSame(0.0, $start->body['t']);
         self::assertSame(0.1, $tick->body['t']);
-        self::assertArrayHasKey('simulation', $session);
+        self::assertArrayHasKey('simulations', $session);
     }
 
     public function testEveryChapterStartsThroughTheApi(): void
@@ -49,7 +52,7 @@ final class ApiControllerTest extends TestCase
             $session = [];
             $controller = new ApiController(new SessionStore($session));
 
-            $response = $controller->handle('POST', 'application/json', sprintf('{"action":"start","chapter":"%s","scenario":false}', $id->value));
+            $response = $controller->handle('POST', 'application/json', sprintf('{"action":"start","tab":"%s","chapter":"%s","scenario":false}', self::TAB, $id->value));
 
             self::assertSame(200, $response->status, $id->value);
             self::assertSame($id->value, $response->body['chapter']);
@@ -65,10 +68,23 @@ final class ApiControllerTest extends TestCase
             }
         };
         $failing->start(ChapterId::Landing, false);
-        $session = ['simulation' => $failing];
+        $store = new class ($failing) implements SimulationStore {
+            public function __construct(private readonly Simulation $simulation)
+            {
+            }
+
+            public function simulation(string $tab): Simulation
+            {
+                return $this->simulation;
+            }
+
+            public function save(string $tab, Simulation $simulation): void
+            {
+            }
+        };
         $logged = [];
         $controller = new ApiController(
-            new SessionStore($session),
+            $store,
             static function (string $message) use (&$logged): void {
                 $logged[] = $message;
             },
@@ -83,5 +99,59 @@ final class ApiControllerTest extends TestCase
         self::assertStringNotContainsString('secret detail', $json);
         self::assertCount(1, $logged);
         self::assertStringContainsString('secret detail', $logged[0]);
+    }
+
+    public function testAStartInOneTabLeavesTheRunOfAnotherTabAlone(): void
+    {
+        $session = [];
+        $controller = new ApiController(new SessionStore($session));
+        $otherTick = str_replace(self::TAB, self::OTHER_TAB, self::TICK);
+
+        $controller->handle('POST', 'application/json', self::START);
+        $controller->handle('POST', 'application/json', self::TICK);
+        $controller->handle('POST', 'application/json', self::TICK);
+        $withoutStart = $controller->handle('POST', 'application/json', $otherTick);
+        $controller->handle('POST', 'application/json', str_replace(['landing', self::TAB], ['launch', self::OTHER_TAB], self::START));
+        $other = $controller->handle('POST', 'application/json', $otherTick);
+        $first = $controller->handle('POST', 'application/json', self::TICK);
+
+        self::assertSame(409, $withoutStart->status, 'the other tab has no simulation of its own yet');
+        self::assertSame('launch', $other->body['chapter']);
+        self::assertSame(0.1, $other->body['t']);
+        self::assertSame('landing', $first->body['chapter']);
+        self::assertEqualsWithDelta(0.3, $first->body['t'], 1e-9);
+    }
+
+    public function testASimulationThatCanNoLongerBeReadIsDroppedAndTheTabStartsAgain(): void
+    {
+        $session = ['simulations' => [self::TAB => 'O:31:"Apollo\\Simulation\\NoLongerThere":0:{}', self::OTHER_TAB => 'not serialized']];
+        $controller = new ApiController(new SessionStore($session));
+
+        $tick = $controller->handle('POST', 'application/json', self::TICK);
+        $otherTick = @$controller->handle('POST', 'application/json', str_replace(self::TAB, self::OTHER_TAB, self::TICK));
+        $start = $controller->handle('POST', 'application/json', self::START);
+
+        self::assertSame(409, $tick->status);
+        self::assertSame(409, $otherTick->status);
+        self::assertSame(200, $start->status);
+        self::assertSame([self::TAB], array_keys($session['simulations']));
+    }
+
+    public function testASessionKeepsTheSimulationsOfTheTabsUsedLast(): void
+    {
+        $session = [];
+        $store = new SessionStore($session);
+        $simulation = new Simulation();
+        $simulation->start(ChapterId::Launch, false);
+
+        $tabs = [];
+        for ($i = 0; $i <= SessionStore::MAX_TABS; $i++) {
+            $tabs[] = sprintf('%016x', $i);
+            $store->save($tabs[$i], $simulation);
+        }
+
+        self::assertNull($store->simulation($tabs[0]), 'the tab used longest ago is dropped');
+        self::assertInstanceOf(Simulation::class, $store->simulation($tabs[1]));
+        self::assertCount(SessionStore::MAX_TABS, $session['simulations']);
     }
 }
