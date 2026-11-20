@@ -22,25 +22,33 @@ final class RateOfDescent
     /** VDGVERT: the desired altitude rate in m/s, negative while descending. */
     private float $desiredRate = 0.0;
 
+    /** The lowest desired altitude rate a click can reach, in m/s; see start(). */
+    private float $floor = LandingTargets::ROD_MAX_DESCENT_RATE;
+
     public function __construct(private readonly LandingGuidance $guidance)
     {
     }
 
-    /** STARTP66: the desired altitude rate starts out as the present altitude rate (HDOTDISP). */
+    /**
+     * STARTP66: the desired altitude rate starts out as the present altitude rate (HDOTDISP). When the
+     * lander already descends faster than the limit of the ROD switch, that rate is the floor: P66 does
+     * not jump to a slower descent by itself, and the clicks can only make it slower.
+     */
     public function start(StateVector $state): void
     {
         $this->desiredRate = $state->radialVelocity();
+        $this->floor = min(LandingTargets::ROD_MAX_DESCENT_RATE, $this->desiredRate);
     }
 
     /**
      * RODCOMP: the clicks since the last pass change the desired altitude rate by RODSCALE each. A positive
-     * click is the ROD switch up: less descent rate.
+     * click is the ROD switch up: less descent rate. Clicks down stop at the floor.
      *
      * @return float the new desired altitude rate in m/s
      */
     public function click(int $clicks): float
     {
-        $this->desiredRate += $clicks * LandingTargets::ROD_SCALE;
+        $this->desiredRate = max($this->floor, $this->desiredRate + $clicks * LandingTargets::ROD_SCALE);
 
         return $this->desiredRate;
     }

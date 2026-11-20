@@ -87,4 +87,11 @@ final readonly class LandingTargets
 
     /** RODSCALE: the change of the desired descent rate per ROD click, 1 ft/s, in m/s. */
     public const ROD_SCALE = 0.3048;
+
+    /**
+     * The fastest descent the ROD switch can ask for, 20 ft/s, in m/s. A chosen value: RODCOMP in Luminary
+     * has no such limit. Without it enough clicks down ask for more than free fall, the engine gives no
+     * vertical thrust at all and the lander drops.
+     */
+    public const ROD_MAX_DESCENT_RATE = -6.096;
 }

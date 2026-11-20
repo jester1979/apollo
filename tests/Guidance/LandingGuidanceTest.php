@@ -7,6 +7,7 @@ namespace Apollo\Tests\Guidance;
 use Apollo\Chapter\Landing\LandingChapter;
 use Apollo\Chapter\Outcome;
 use Apollo\Guidance\Luminary\LandingGuidance;
+use Apollo\Guidance\Luminary\RateOfDescent;
 use Apollo\Physics\Body;
 use Apollo\Physics\StateVector;
 use Apollo\Scenario\LandingTargets;
@@ -219,6 +220,25 @@ final class LandingGuidanceTest extends TestCase
 
         self::assertGreaterThanOrEqual(0.0, $command->pitch, 'the thrust has no part towards the ground');
         self::assertLessThanOrEqual(M_PI, $command->pitch);
+    }
+
+    public function testClicksDownOnTheRodSwitchStopAtTwentyFeetPerSecond(): void
+    {
+        $rod = new RateOfDescent($this->guidance());
+        $rod->start(new StateVector(0.0, Body::Moon->radius() + 100.0, 0.0, -1.0));
+
+        self::assertEqualsWithDelta(-1.0 - 3 * 0.3048, $rod->click(-3), 1e-9);
+        self::assertSame(LandingTargets::ROD_MAX_DESCENT_RATE, $rod->click(-100));
+        self::assertEqualsWithDelta(LandingTargets::ROD_MAX_DESCENT_RATE + 0.3048, $rod->click(1), 1e-9);
+    }
+
+    public function testP66StartedInAFasterDescentKeepsThatRateAsItsFloor(): void
+    {
+        $rod = new RateOfDescent($this->guidance());
+        $rod->start(new StateVector(0.0, Body::Moon->radius() + 2000.0, 0.0, -20.0));
+
+        self::assertSame(-20.0, $rod->click(-5), 'no faster than the descent P66 started in');
+        self::assertEqualsWithDelta(-20.0 + 0.3048, $rod->click(1), 1e-9);
     }
 
     public function testTooHardAContactIsACrash(): void
