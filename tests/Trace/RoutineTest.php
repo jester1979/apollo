@@ -129,6 +129,28 @@ final class RoutineTest extends TestCase
         self::assertSame([], $lines, 'every P40 routine is a case');
     }
 
+    public function testTheLabelsOfTheAscentRoutinesPointAtTheirLines(): void
+    {
+        $lines = [
+            'P12LM' => ['Luminary099/P12.agc', 35],
+            'NEWLOAD' => ['Luminary099/P12.agc', 111],
+            'P12TABLE' => ['Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc', 74],
+            'P12IGN' => ['Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc', 488],
+            'ATMAG' => ['Luminary099/ASCENT_GUIDANCE.agc', 38],
+            'ASCENT' => ['Luminary099/ASCENT_GUIDANCE.agc', 90],
+            'ENGOFF' => ['Luminary099/ASCENT_GUIDANCE.agc', 470],
+            'CUTOFF' => ['Luminary099/ASCENT_GUIDANCE.agc', 517],
+        ];
+        foreach (Routine::cases() as $routine) {
+            if (isset($lines[$routine->label()])) {
+                self::assertSame($lines[$routine->label()], [$routine->file(), $routine->line()], $routine->label());
+                unset($lines[$routine->label()]);
+            }
+        }
+
+        self::assertSame([], $lines, 'every ascent routine is a case');
+    }
+
     public function testNoTwoRoutinesShareALabel(): void
     {
         $labels = array_map(static fn (Routine $routine): string => $routine->label(), Routine::cases());

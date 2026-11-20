@@ -25,6 +25,14 @@ enum Routine
     case BurnBaby;     // Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc:159
     case V99Recyc;     // Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc:770
     case P63Zoom;      // Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc:564
+    case P12Table;     // Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc:74
+    case P12Ign;       // Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc:488
+    case P12Lm;        // Luminary099/P12.agc:35
+    case NewLoad;      // Luminary099/P12.agc:111 (the V06N76 flash)
+    case AtMag;        // Luminary099/ASCENT_GUIDANCE.agc:38
+    case Ascent;       // Luminary099/ASCENT_GUIDANCE.agc:90
+    case EngOff;       // Luminary099/ASCENT_GUIDANCE.agc:470
+    case CutOff;       // Luminary099/ASCENT_GUIDANCE.agc:517
     case Num;          // Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc:536
     case Verb;         // Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc:658
     case Noun;         // Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc:671
@@ -73,6 +81,14 @@ enum Routine
             self::BurnBaby => 'BURNBABY',
             self::V99Recyc => 'V99RECYC',
             self::P63Zoom => 'P63ZOOM',
+            self::P12Table => 'P12TABLE',
+            self::P12Ign => 'P12IGN',
+            self::P12Lm => 'P12LM',
+            self::NewLoad => 'NEWLOAD',
+            self::AtMag => 'ATMAG',
+            self::Ascent => 'ASCENT',
+            self::EngOff => 'ENGOFF',
+            self::CutOff => 'CUTOFF',
             self::Num => 'NUM',
             self::Verb => 'VERB',
             self::Noun => 'NOUN',
@@ -112,7 +128,9 @@ enum Routine
             self::QuadGuid, self::RootPsrs, self::StartP64, self::P65Start, self::P65Vert, self::StartP66,
             self::P66Vert, self::RodComp => 'Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc',
             self::Throttle => 'Luminary099/THROTTLE_CONTROL_ROUTINES.agc',
-            self::BurnBaby, self::V99Recyc, self::P63Zoom => 'Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc',
+            self::BurnBaby, self::V99Recyc, self::P63Zoom, self::P12Table, self::P12Ign => 'Luminary099/BURN_BABY_BURN--MASTER_IGNITION_ROUTINE.agc',
+            self::P12Lm, self::NewLoad => 'Luminary099/P12.agc',
+            self::AtMag, self::Ascent, self::EngOff, self::CutOff => 'Luminary099/ASCENT_GUIDANCE.agc',
             self::Num, self::Verb, self::Noun, self::Clear, self::Enter, self::VerbFan, self::CharAlrm,
             self::ProcKey, self::VbRelDsp, self::VbTstLts, self::ErrorReset => 'Luminary099/PINBALL_GAME_BUTTONS_AND_LIGHTS.agc',
             self::V37, self::V37NoNo, self::GoProg => 'Luminary099/FRESH_START_AND_RESTART.agc',
@@ -141,6 +159,14 @@ enum Routine
             self::BurnBaby => 159,
             self::V99Recyc => 770,
             self::P63Zoom => 564,
+            self::P12Table => 74,
+            self::P12Ign => 488,
+            self::P12Lm => 35,
+            self::NewLoad => 111,
+            self::AtMag => 38,
+            self::Ascent => 90,
+            self::EngOff => 470,
+            self::CutOff => 517,
             self::Num => 536,
             self::Verb => 658,
             self::Noun => 671,

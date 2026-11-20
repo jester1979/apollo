@@ -546,9 +546,9 @@ Voor slice 1 is `git init` nodig, plus een remote naar `git@github.com:jester197
   - [x] Zonder PRO op V99 volgt geen branding en eindigt het hoofdstuk met `missed`.
   - [x] `LoiChapterTest` slaagt.
 - **10. Opstijgen (P12).** AFK. Blocked by: 8.
-  - [ ] Na "Ascent" volgt V06N76, dan PRO, dan V99, dan PRO, en daarna stijgt de stijgtrap op terwijl de daaltrap blijft staan. Daarna toont de DSKY V16N63.
-  - [ ] Het hoofdstuk eindigt in een maanbaan met `success`.
-  - [ ] `AscentChapterTest` slaagt.
+  - [x] Na "Ascent" volgt V06N76, dan PRO, dan V99, dan PRO, en daarna stijgt de stijgtrap op terwijl de daaltrap blijft staan. Daarna toont de DSKY V16N63.
+  - [x] Het hoofdstuk eindigt in een maanbaan met `success`.
+  - [x] `AscentChapterTest` slaagt.
 - **11. Vertrek naar de aarde (TEI, P40).** AFK. Blocked by: 9.
   - [ ] Na "Trans-Earth injection" volgt hetzelfde P40-verloop als bij LOI, nu prograde. Het bovenaanzicht toont de baan die openbreekt naar een ontsnappingsbaan.
   - [ ] `TeiChapterTest` slaagt.

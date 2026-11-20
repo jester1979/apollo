@@ -113,6 +113,47 @@ final class StartStates
         );
     }
 
+    /**
+     * The ascent stage on the surface, rounded public values: about 4.5 t with 2.4 t of propellant, the APS
+     * with 15.6 kN (3500 lbf) and an isp of 311 s. The descent stage stays behind (the chapter only draws it).
+     */
+    public const ASCENT_MASS = 4547.0;
+    public const ASCENT_PROPELLANT = 2376.0;
+    public const APS_THRUST = 15600.0;
+    public const APS_ISP = 311.0;
+
+    /**
+     * The injection target of P12 as the nominal values of P12.agc: VINJNOM 16.7924 m/cs (5509.5 ft/s, the
+     * horizontal velocity) and RDOTDNOM 0.059436 m/cs (19.5 ft/s, the radial velocity), in m/s. The altitude
+     * of the injection, 60 000 ft, is the HINJECT of the Apollo 11 flight; Luminary099 loads it from the pad
+     * load, so its value is not in the source. Together they give an orbit of about 17 km by 53 km.
+     */
+    public const ASCENT_TARGET_HORIZONTAL_SPEED = 1679.24;
+    public const ASCENT_TARGET_RADIAL_SPEED = 5.9436;
+    public const ASCENT_TARGET_ALTITUDE = 18288.0;
+
+    /** Seconds from the first PRO to TIG: V06N74 counts these down (P12TABLE shows N74 until TIG-5 s). */
+    public const ASCENT_COUNTDOWN = 20;
+
+    /** The ascent stage at rest on the surface; the Moon's rotation is left out of the 2D model. */
+    public static function ascentState(): StateVector
+    {
+        return new StateVector(0.0, Body::Moon->radius(), 0.0, 0.0);
+    }
+
+    /** The ascent stage with the APS off, pointing up. */
+    public static function ascentVehicle(): Vehicle
+    {
+        return new Vehicle(
+            mass: self::ASCENT_MASS,
+            dryMass: self::ASCENT_MASS - self::ASCENT_PROPELLANT,
+            maxThrust: self::APS_THRUST,
+            isp: self::APS_ISP,
+            throttle: 0.0,
+            pitch: M_PI / 2.0,
+        );
+    }
+
     /** The Saturn V on the pad at lift-off: the pad moves with the Earth (about 408 m/s at the Cape), nothing else. */
     public static function launchState(): StateVector
     {

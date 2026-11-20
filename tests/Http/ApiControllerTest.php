@@ -48,7 +48,7 @@ final class ApiControllerTest extends TestCase
         $session = [];
         $controller = new ApiController(new SessionStore($session));
 
-        $response = $controller->handle('POST', 'application/json', '{"action":"start","chapter":"ascent","scenario":false}');
+        $response = $controller->handle('POST', 'application/json', '{"action":"start","chapter":"tei","scenario":false}');
 
         self::assertSame(501, $response->status);
         self::assertSame(['error'], array_keys($response->body));

@@ -17,7 +17,7 @@ header('Content-Type: text/html; charset=utf-8');
 <body>
     <header class="page-header">
         <h1>Apollo AGC in PHP</h1>
-        <p>Choose a chapter of the Apollo 11 mission and start it. Launch: the Saturn V climbs to orbit while the command module computer monitors (P11). Landing: the lunar module brakes with its descent engine and lands by itself; from P64 the arrow keys are the ROD switch, arrow up gives less descent rate, arrow down more, 1 ft/s per press.</p>
+        <p>Choose a chapter of the Apollo 11 mission and start it. Launch: the Saturn V climbs to orbit while the command module computer monitors (P11). Landing: the lunar module brakes with its descent engine and lands by itself; from P64 the arrow keys are the ROD switch, arrow up gives less descent rate, arrow down more, 1 ft/s per press. Ascent: the ascent stage lifts off from the descent stage and flies to lunar orbit (P12): answer the flashing displays with P (PRO).</p>
     </header>
     <main>
         <fieldset class="chooser" id="chooser">

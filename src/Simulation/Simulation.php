@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Apollo\Simulation;
 
+use Apollo\Chapter\Ascent\AscentChapter;
 use Apollo\Chapter\Chapter;
 use Apollo\Chapter\ChapterId;
 use Apollo\Chapter\Landing\LandingChapter;
@@ -30,6 +31,7 @@ class Simulation
             ChapterId::Launch => new LaunchChapter(),
             ChapterId::LunarOrbitInsertion => new LoiChapter(),
             ChapterId::Landing => new LandingChapter(null, $scenario),
+            ChapterId::Ascent => new AscentChapter(),
             default => throw new ChapterNotAvailable(),
         };
         $this->scenario = $scenario;
@@ -95,6 +97,7 @@ class Simulation
 
         return match ($majorMode) {
             0 => 'P00 – No guidance (free fall)',
+            12 => 'P12 – Powered ascent (ATMAG, ASCENT)',
             40 => 'P40 – SPS burn with an external delta-V (UPDATEVG, STEERING, S40.8)',
             63 => 'P63 – Braking phase',
             64 => 'P64 – Approach phase',

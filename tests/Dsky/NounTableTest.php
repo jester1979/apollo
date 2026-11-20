@@ -86,4 +86,37 @@ final class NounTableTest extends TestCase
         );
         self::assertNull(NounTable::for(Computer::Lm)->find(40));
     }
+
+    public function testNoun76OfTheLmIsDesiredVelocitiesAndCrossRange(): void
+    {
+        $noun = NounTable::for(Computer::Lm)->find(76);
+
+        self::assertNotNull($noun);
+        self::assertSame(
+            [
+                [Unit::FeetPerSecond, Format::Decimal1],
+                [Unit::FeetPerSecond, Format::Decimal1],
+                [Unit::NauticalMiles, Format::Decimal1],
+            ],
+            array_map(static fn ($component) => [$component->unit, $component->format], $noun->components),
+        );
+        self::assertNull(NounTable::for(Computer::Cm)->find(76));
+    }
+
+    public function testNoun74OfTheLmIsTimeFromIgnitionAndTheAnglesAfterVehicleRise(): void
+    {
+        $noun = NounTable::for(Computer::Lm)->find(74);
+
+        self::assertNotNull($noun);
+        self::assertSame(
+            [
+                [Unit::Seconds, Format::MinutesSeconds],
+                [Unit::Degrees, Format::Decimal2],
+                [Unit::Degrees, Format::Decimal2],
+            ],
+            array_map(static fn ($component) => [$component->unit, $component->format], $noun->components),
+        );
+        self::assertSame(45.0, Unit::Degrees->fromSi(M_PI / 4.0));
+        self::assertNull(NounTable::for(Computer::Cm)->find(74));
+    }
 }

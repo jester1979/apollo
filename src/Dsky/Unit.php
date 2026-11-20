@@ -17,14 +17,16 @@ enum Unit
     case Feet;
     case FeetPerSecond;
     case NauticalMiles;
+    case Degrees;
 
-    /** Converts a value in SI units (m, m/s, s) to this unit. */
+    /** Converts a value in SI units (m, m/s, s, rad) to this unit. */
     public function fromSi(float $value): float
     {
         return match ($this) {
             self::None, self::Seconds => $value,
             self::Feet, self::FeetPerSecond => $value / 0.3048,
             self::NauticalMiles => $value / 1852.0,
+            self::Degrees => rad2deg($value),
         };
     }
 }

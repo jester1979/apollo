@@ -130,7 +130,7 @@ final class SimulationTest extends TestCase
     {
         $this->expectException(ChapterNotAvailable::class);
 
-        (new Simulation())->start(ChapterId::Ascent, false);
+        (new Simulation())->start(ChapterId::TransEarthInjection, false);
     }
 
     public function testTickBeforeStartIsALogicError(): void

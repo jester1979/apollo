@@ -35,7 +35,7 @@ final class Dsky
     /** The verbs that display a noun: V05 octal, V06 decimal, V16 a monitor. */
     private const DISPLAY_VERBS = [5, 6, 16];
 
-    /** The verbs a program flashes to ask the crew for an answer: V50 please perform, V99 please enable engine. */
+    /** The verbs that only exist to ask the crew for an answer: V50 please perform, V99 please enable engine. */
     private const PROCEED_VERBS = [50, 99];
 
     private const VERB_OCTAL = 5;
@@ -200,7 +200,7 @@ final class Dsky
         }
     }
 
-    /** True when PRO was pressed since the last call while the program flashed V50 or V99. */
+    /** True when PRO was pressed since the last call while the program flashed a display (V50, V99, V06). */
     public function takeProceed(): bool
     {
         $proceed = $this->proceed;
@@ -475,10 +475,13 @@ final class Dsky
         $this->releaseUserDisplay();
     }
 
-    /** PROCKEY: answers a flashing V50 or V99 and gives the display back. PRO without a question does nothing. */
+    /**
+     * PROCKEY: answers a flashing display (V50, V99, or a V06 a program flashes with GOFLASH, like the
+     * V06N76 of P12) and gives the display back. PRO without a question does nothing.
+     */
     private function pressProceed(): void
     {
-        if (!$this->flash || !in_array($this->verb, self::PROCEED_VERBS, true)) {
+        if (!$this->flash) {
             $this->note('PRO → no display is asking for an answer, nothing happens', Routine::ProcKey);
 
             return;

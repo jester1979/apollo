@@ -604,6 +604,9 @@ final class LandingChapter implements Chapter
             // 68: slant range to the landing site, time to go in braking phase, LR altitude minus computed
             // altitude (there is no landing radar model, so no difference).
             68 => [$this->slantRange(), $this->timeToGo(), 0.0],
+            // 74 and 76 belong to P12: the landing has no values for them, they show zeros so that the user can
+            // key them in every LM chapter.
+            74, 76 => [0.0, 0.0, 0.0],
             default => throw new \LogicException(sprintf('Noun %d has no values in the landing', $noun)),
         };
     }

@@ -394,6 +394,18 @@ final class DskyTest extends TestCase
         self::assertTrue($dsky->takeProceed(), 'V50 is answered by PRO too');
     }
 
+    public function testProAnswersAFlashingV06AsWellLikeTheV06N76OfP12(): void
+    {
+        $dsky = new Dsky(Computer::Lm);
+        $dsky->requestDisplay(6, 76, true);
+        self::assertTrue($dsky->toArray()['flash']);
+
+        $this->keys($dsky, 'P');
+
+        self::assertTrue($dsky->takeProceed());
+        self::assertFalse($dsky->toArray()['flash']);
+    }
+
     public function testProAnswersTheFlashingVerbEvenWhileTheUserHoldsTheDisplay(): void
     {
         $dsky = new Dsky(Computer::Lm);

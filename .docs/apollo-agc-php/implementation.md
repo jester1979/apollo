@@ -234,3 +234,24 @@ The builder of slice 7 reported that a landing with PRO at about t=20 s ended `c
 - `tests/Physics/ConicTest.php`, `tests/Physics/TrailTest.php`: conic cases; trail capacity and serialization
 - `tests/Trace/RoutineTest.php`, `tests/Dsky/NounTableTest.php`, `tests/Chapter/LaunchChapterTest.php`: P40 routines, N25 and N40, N40 during launch
 - `tests/Simulation/SimulationTest.php`, `tests/Http/ApiControllerTest.php`: the unbuilt-chapter tests now use `ascent`
+
+### 10. Opstijgen (P12)
+
+`vendor/bin/phpunit` passed with 286 tests and 50692 assertions, including the 32 tests of `AscentChapterTest`, and `vendor/bin/phpstan analyse` reported no errors. In Chrome, "Ascent" started with PROG 12 and V06N76 flashing. The `p` key gave V06N74 counting down, V99N74 flashed at 5 s before ignition, and a second `p` ignited the APS. Screenshots showed the ascent stage lifting off while the descent stage stayed on the surface. The run ended at t=418.8 s with V16N63, a 17.1 km × 52.6 km orbit and "Outcome: success". In tests a V99 PRO up to 55 s late still ends in success, and a missing PRO ends `missed`.
+
+- `src/Guidance/Luminary/AscentGuidance.php`: in-plane port of ATMAG, ASCENT, MAINENG and ENGOFF: vertical rise to 40 ft/s, radial acceleration from altitude and radial-velocity error over TGO, engine off under 4 s
+- `src/Guidance/Luminary/AscentCommand.php`: result of one pass
+- `src/Chapter/Ascent/AscentChapter.php`: P12 chapter: V06N76 flashing, PRO, V06N74 countdown, V99N74, PRO, APS burn, V16N63; bounded waits end the chapter `missed`
+- `src/Chapter/Ascent/AscentPhase.php`: enum for the chapter phase
+- `src/Scenario/StartStates.php`: ascent stage and APS data; the target uses VINJNOM and RDOTDNOM from `P12.agc` and a chosen injection altitude of 60 000 ft
+- `src/Simulation/Simulation.php`: `start()` builds `AscentChapter`; program name for P12
+- `src/Trace/Routine.php`: eight ascent routines, line numbers checked against the source
+- `src/Dsky/Unit.php`, `src/Dsky/NounTable.php`: a degrees unit; LM nouns N74 and N76 from Luminary099's noun list
+- `src/Dsky/Dsky.php`: PRO answers any flashing display, because P12 flashes V06N76
+- `src/Chapter/Landing/LandingChapter.php`: zeros for N74 and N76, so every LM noun stays keyable in the landing
+- `public/assets/views/ascent.js`: the ascent stage lifts off the descent stage, which stays; track, target-altitude line, bars, orbit summary at cutoff
+- `public/assets/app.js`, `public/index.php`: registers the ascent view; one sentence of intro text
+- `tests/Chapter/AscentChapterTest.php`: on-time success at 1×, late PROs, no PRO, ground contact before lift-off, P00, all LM nouns keyable, serialization
+- `tests/Guidance/AscentGuidanceTest.php`: vertical rise, rise exit, a full burn to the target orbit
+- `tests/Dsky/DskyTest.php`, `tests/Dsky/NounTableTest.php`, `tests/Trace/RoutineTest.php`: PRO on a flashing V06, N74 and N76, ascent routines
+- `tests/Http/ApiControllerTest.php`, `tests/Simulation/SimulationTest.php`: the unbuilt-chapter tests now use `tei`

@@ -53,6 +53,8 @@ final readonly class NounTable
         $altitude = new NounComponent(Unit::Feet, Format::Whole);
         $minutesSeconds = new NounComponent(Unit::Seconds, Format::MinutesSeconds);
         $octal = new NounComponent(Unit::None, Format::Octal);
+        $degrees = new NounComponent(Unit::Degrees, Format::Decimal2);
+        $nauticalMiles = new NounComponent(Unit::NauticalMiles, Format::Decimal1);
 
         return new self(
             // 09: alarm codes, octal only for each.
@@ -64,7 +66,11 @@ final readonly class NounTable
             // 64: time left for redesignation, altitude rate, computed altitude.
             new Noun(64, $minutesSeconds, $velocity, $altitude),
             // 68: slant range to landing site, time to go in braking phase, LR altitude minus computed altitude.
-            new Noun(68, new NounComponent(Unit::NauticalMiles, Format::Decimal1), $minutesSeconds, $altitude),
+            new Noun(68, $nauticalMiles, $minutesSeconds, $altitude),
+            // 74: time from ignition (xxBxx min/sec), yaw after vehicle rise, pitch after vehicle rise (xxx.xx deg).
+            new Noun(74, $minutesSeconds, $degrees, $degrees),
+            // 76: desired horizontal velocity, desired radial velocity (xxxx.x ft/s), cross-range distance (xxxx.x nm).
+            new Noun(76, $velocity, $velocity, $nauticalMiles),
         );
     }
 
