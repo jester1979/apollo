@@ -6,24 +6,27 @@ namespace Apollo\Tests\Chapter;
 
 use Apollo\Chapter\Landing\LandingChapter;
 use Apollo\Chapter\Outcome;
+use Apollo\Dsky\Key;
 use Apollo\Dsky\Light;
 use Apollo\Physics\Body;
 use Apollo\Physics\Integrator;
 use Apollo\Physics\StateVector;
 use Apollo\Scenario\StartStates;
 use Apollo\Simulation\TickInput;
+use Apollo\Tests\Support\LandingBurn;
+use Apollo\Trace\Routine;
 use PHPUnit\Framework\TestCase;
 
 final class LandingChapterTest extends TestCase
 {
-    public function testItStartsAtPdiAltitudeAndSpeedWithTheEngineIgnitedAndNoOutcome(): void
+    public function testItStartsAtPdiAltitudeAndSpeedWithTheEngineOffAndNoOutcome(): void
     {
         $chapter = new LandingChapter();
 
         self::assertNull($chapter->outcome());
         self::assertEqualsWithDelta(StartStates::LANDING_ALTITUDE, $chapter->vehicleView()['altitude'], 0.01);
         self::assertEqualsWithDelta(1690.0, $chapter->vehicleView()['vx'], 0.01);
-        self::assertSame(0.1, $chapter->vehicleView()['throttle']);
+        self::assertSame(0.0, $chapter->vehicleView()['throttle']);
         self::assertSame(1.0, $chapter->vehicleView()['fuel']);
         self::assertSame(63, $chapter->agc()->majorMode);
     }
@@ -31,6 +34,7 @@ final class LandingChapterTest extends TestCase
     public function testFuelRunsDownWhileTheEngineBurns(): void
     {
         $chapter = new LandingChapter();
+        LandingBurn::proceed($chapter);
 
         $chapter->step(10.0, new TickInput());
 
@@ -55,6 +59,7 @@ final class LandingChapterTest extends TestCase
     public function testAFinishedChapterDoesNotMoveAnyMore(): void
     {
         $chapter = new LandingChapter();
+        LandingBurn::proceed($chapter);
         $chapter->step(1000.0, new TickInput());
         $time = $chapter->agc()->missionTime;
 
@@ -89,6 +94,8 @@ final class LandingChapterTest extends TestCase
     public function testTheRegistersFollowTheVehicleEvery2Seconds(): void
     {
         $chapter = new LandingChapter();
+        LandingBurn::proceed($chapter);
+        $chapter->step(1.0, new TickInput()); // ignition at 5 s, a refresh at 6 s, the next at 8 s
         $first = $chapter->agc()->dsky->toArray()['r1'];
 
         $chapter->step(1.9, new TickInput());
@@ -102,6 +109,7 @@ final class LandingChapterTest extends TestCase
     {
         $chapter = new LandingChapter();
         $dsky = $chapter->agc()->dsky;
+        LandingBurn::proceed($chapter);
 
         $chapter->step(26.0 - 0.1, new TickInput());
         self::assertFalse($dsky->isLit(Light::CompActy), 'the engine still burns at minimum, no guidance yet');
@@ -119,8 +127,178 @@ final class LandingChapterTest extends TestCase
     public function testTheDskyShowsP64WhenTheGuidanceHandsOver(): void
     {
         $chapter = new LandingChapter();
+        LandingBurn::proceed($chapter);
         $chapter->step(1000.0, new TickInput());
 
         self::assertSame('64', $chapter->agc()->dsky->toArray()['prog']);
+    }
+
+    /** @param list<Key> $keys */
+    private function press(LandingChapter $chapter, array $keys): void
+    {
+        foreach ($keys as $key) {
+            $chapter->agc()->dsky->press($key, $chapter->allowedPrograms());
+        }
+    }
+
+    public function testV99N63FlashesFromTigMinus5SecondsAndNotBefore(): void
+    {
+        $chapter = new LandingChapter();
+
+        $chapter->step(4.9, new TickInput());
+        $display = $chapter->agc()->dsky->toArray();
+        self::assertSame(['06', '63', false], [$display['verb'], $display['noun'], $display['flash']]);
+
+        $chapter->step(0.1, new TickInput());
+        $display = $chapter->agc()->dsky->toArray();
+        self::assertSame(['99', '63', true], [$display['verb'], $display['noun'], $display['flash']]);
+
+        $chapter->step(30.0, new TickInput());
+        $display = $chapter->agc()->dsky->toArray();
+        self::assertSame(['99', '63', true], [$display['verb'], $display['noun'], $display['flash']], 'it keeps flashing after TIG');
+    }
+
+    public function testWithoutProThereIsNoIgnition(): void
+    {
+        $chapter = new LandingChapter();
+
+        $chapter->step(120.0, new TickInput());
+
+        self::assertSame(0.0, $chapter->vehicleView()['throttle']);
+        self::assertSame(1.0, $chapter->vehicleView()['fuel']);
+        self::assertNull($chapter->outcome());
+    }
+
+    public function testProBeforeV99AsksForItDoesNothing(): void
+    {
+        $chapter = new LandingChapter();
+        $chapter->step(2.0, new TickInput());
+
+        $this->press($chapter, [Key::Proceed]);
+        $chapter->step(8.0, new TickInput());
+
+        self::assertSame(0.0, $chapter->vehicleView()['throttle']);
+        self::assertSame('99', $chapter->agc()->dsky->toArray()['verb'], 'V99 still waits for its answer');
+    }
+
+    public function testProIgnitesTheEngineAndTheDisplayReturnsToV06N63(): void
+    {
+        $chapter = new LandingChapter();
+        $chapter->step(7.0, new TickInput());
+
+        $this->press($chapter, [Key::Proceed]);
+        $chapter->step(0.1, new TickInput());
+
+        self::assertSame(0.1, $chapter->vehicleView()['throttle']);
+        $display = $chapter->agc()->dsky->toArray();
+        self::assertSame(['06', '63', false], [$display['verb'], $display['noun'], $display['flash']]);
+        self::assertSame(Routine::BurnBaby, $chapter->agc()->currentRoutine);
+    }
+
+    public function testV16N68RefreshesEverySecondAndKeyRelBringsV06N63Back(): void
+    {
+        $chapter = new LandingChapter();
+        LandingBurn::proceed($chapter);
+        $chapter->step(1.0, new TickInput());
+
+        $this->press($chapter, [Key::Verb, Key::One, Key::Six, Key::Noun, Key::Six, Key::Eight, Key::Enter]);
+        $chapter->step(0.1, new TickInput());
+        $display = $chapter->agc()->dsky->toArray();
+        self::assertSame(['16', '68'], [$display['verb'], $display['noun']]);
+        self::assertTrue($chapter->agc()->dsky->isLit(Light::KeyRel));
+        self::assertMatchesRegularExpression('/^\+\d{5}$/', $display['r1']);
+        self::assertMatchesRegularExpression('/^\d\d \d\d$/', $display['r2']);
+
+        // Time to go (R2) counts down in whole seconds: it must differ from one second to the next
+        // and must not move in between.
+        $previous = $display['r2'];
+        for ($second = 0; $second < 4; $second++) {
+            $chapter->step(0.5, new TickInput());
+            self::assertSame($previous, $chapter->agc()->dsky->toArray()['r2'], 'no refresh half way a second');
+            $chapter->step(0.5, new TickInput());
+            $now = $chapter->agc()->dsky->toArray()['r2'];
+            self::assertNotSame($previous, $now, 'a new value every second');
+            $previous = $now;
+        }
+
+        $this->press($chapter, [Key::KeyRelease]);
+        $display = $chapter->agc()->dsky->toArray();
+        self::assertSame(['06', '63'], [$display['verb'], $display['noun']]);
+        self::assertFalse($chapter->agc()->dsky->isLit(Light::KeyRel));
+    }
+
+    public function testTheSlantRangeToTheLandingSiteIsAboutThe260NauticalMilesOfTheStartAndFalls(): void
+    {
+        $chapter = new LandingChapter();
+        LandingBurn::proceed($chapter);
+        $this->press($chapter, [Key::Verb, Key::One, Key::Six, Key::Noun, Key::Six, Key::Eight, Key::Enter]);
+        $chapter->step(0.1, new TickInput());
+        $first = (int) $chapter->agc()->dsky->toArray()['r1'];
+
+        $chapter->step(30.0, new TickInput());
+
+        // xxxx.x nautical miles: 2600 is 260.0.
+        self::assertEqualsWithDelta(2600, $first, 100);
+        self::assertLessThan($first, (int) $chapter->agc()->dsky->toArray()['r1']);
+    }
+
+    public function testTheUserDisplayShowsTheNounsOfTheLandingTable(): void
+    {
+        $chapter = new LandingChapter();
+
+        foreach ([9 => Key::Five, 60 => Key::Six, 63 => Key::Six, 64 => Key::Six, 68 => Key::Six] as $noun => $verbDigit) {
+            $this->press($chapter, [
+                Key::Verb, Key::Zero, $verbDigit,
+                Key::Noun, Key::from((string) intdiv($noun, 10)), Key::from((string) ($noun % 10)),
+                Key::Enter,
+            ]);
+            $chapter->step(0.1, new TickInput());
+
+            $display = $chapter->agc()->dsky->toArray();
+            self::assertNotSame('', $display['r1'], sprintf('N%02d shows its registers', $noun));
+            self::assertFalse($chapter->agc()->dsky->isLit(Light::OprErr), sprintf('N%02d is known', $noun));
+        }
+    }
+
+    public function testV37ToP00StopsTheGuidanceAndTheLandingIsMissed(): void
+    {
+        $chapter = new LandingChapter();
+        LandingBurn::proceed($chapter);
+        $chapter->step(30.0, new TickInput());
+
+        $this->press($chapter, [Key::Verb, Key::Three, Key::Seven, Key::Enter, Key::Zero, Key::Zero, Key::Enter]);
+        $chapter->step(0.1, new TickInput());
+
+        self::assertSame(Outcome::Missed, $chapter->outcome());
+        self::assertSame(0.0, $chapter->vehicleView()['throttle']);
+        self::assertSame(0, $chapter->agc()->majorMode);
+        self::assertSame('00', $chapter->agc()->dsky->toArray()['prog']);
+    }
+
+    public function testV37ToAProgramOutsideTheLandingGivesOprErrAndTheLandingGoesOn(): void
+    {
+        $chapter = new LandingChapter();
+
+        $this->press($chapter, [Key::Verb, Key::Three, Key::Seven, Key::Enter, Key::Four, Key::One, Key::Enter]);
+        $chapter->step(0.1, new TickInput());
+
+        self::assertTrue($chapter->agc()->dsky->isLit(Light::OprErr));
+        self::assertNull($chapter->outcome());
+        self::assertSame(63, $chapter->agc()->majorMode);
+
+        $this->press($chapter, [Key::Reset]);
+        self::assertFalse($chapter->agc()->dsky->isLit(Light::OprErr));
+    }
+
+    public function testV37ToP63KeepsTheLandingRunning(): void
+    {
+        $chapter = new LandingChapter();
+
+        $this->press($chapter, [Key::Verb, Key::Three, Key::Seven, Key::Enter, Key::Six, Key::Three, Key::Enter]);
+        $chapter->step(0.1, new TickInput());
+
+        self::assertFalse($chapter->agc()->dsky->isLit(Light::OprErr));
+        self::assertNull($chapter->outcome());
+        self::assertSame(63, $chapter->agc()->majorMode);
     }
 }

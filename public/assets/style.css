@@ -212,3 +212,16 @@ canvas {
     opacity: 1;
     cursor: default;
 }
+
+.dsky-key:not(:disabled) {
+    cursor: pointer;
+}
+
+.dsky-key:not(:disabled):hover {
+    background: #23282d;
+}
+
+.dsky-key:not(:disabled):active,
+.dsky-key.pressed {
+    background: #3a4148;
+}

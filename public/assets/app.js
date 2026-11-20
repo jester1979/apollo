@@ -12,7 +12,18 @@ const outcomeLine = document.getElementById('outcome');
 const canvas = document.getElementById('view');
 const ctx = canvas.getContext('2d');
 
-const dsky = createDsky(document.getElementById('dsky'));
+// The most DSKY keys one tick may carry (TickRequest accepts 32).
+const MAX_KEYS_PER_TICK = 32;
+
+// Keys pressed since the last tick; the next tick takes them along.
+const pendingKeys = [];
+let running = false;
+
+const dsky = createDsky(document.getElementById('dsky'), (name) => {
+    if (running) {
+        pendingKeys.push(name);
+    }
+});
 dsky.render({
     prog: '', verb: '', noun: '', r1: '', r2: '', r3: '', flash: false, lights: {},
 });
@@ -60,6 +71,9 @@ function delay(ms) {
 async function run() {
     const myRun = ++runId;
     startButton.disabled = true;
+    pendingKeys.length = 0;
+    running = true;
+    dsky.setEnabled(true);
     outcomeLine.textContent = '';
     delete outcomeLine.dataset.outcome;
     statusLine.textContent = 'Starting…';
@@ -71,12 +85,21 @@ async function run() {
         // One tick in flight at a time: await the answer, render, then wait.
         while (state.outcome === null && myRun === runId) {
             await delay(TICK_INTERVAL_MS);
-            state = await post({ action: 'tick', keys: [], rod: 0, speed: 1 });
+            state = await post({
+                action: 'tick',
+                keys: pendingKeys.splice(0, MAX_KEYS_PER_TICK),
+                rod: 0,
+                speed: 1,
+            });
             show(state);
         }
     } catch (error) {
         statusLine.textContent = `Error: ${error.message}`;
     } finally {
+        if (myRun === runId) {
+            running = false;
+            dsky.setEnabled(false);
+        }
         startButton.disabled = false;
         startButton.textContent = 'Start again';
     }

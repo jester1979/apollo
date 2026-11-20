@@ -47,7 +47,16 @@ class Simulation
         }
 
         $this->speed = $input->speed;
-        $this->chapter->step(Integrator::STEP * $input->speed, $input);
+        $dt = Integrator::STEP * $input->speed;
+
+        // The keys go in first, so the chapter sees them in the same tick.
+        $dsky = $this->chapter->agc()->dsky;
+        $programs = $this->chapter->allowedPrograms();
+        foreach ($input->keys as $key) {
+            $dsky->press($key, $programs);
+        }
+        $this->chapter->step($dt, $input);
+        $dsky->advance($dt);
 
         return $this->response($this->chapter);
     }

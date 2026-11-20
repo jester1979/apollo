@@ -92,3 +92,22 @@ Verified by two builders. `vendor/bin/phpunit` passed with 62 tests and 2882 ass
 - `tests/Dsky/DskyTest.php`: V06N63 display, blank registers, noun change, flash, lights, refusal of an invalid verb, noun or value count
 - `tests/Chapter/LandingChapterTest.php`: V06N63 at start, the 2 s refresh, COMP ACTY on and off, PROG 64 at hand-over
 - `tests/Simulation/SimulationTest.php`: the response carries the real dsky shape
+
+### 4. DSKY-invoer
+
+`vendor/bin/phpunit` passed with 122 tests and 2971 assertions, including the plan's `DskyTest` cases, and `vendor/bin/phpstan analyse` reported no errors. In Chrome, with real clicks and key presses: `V16N68 ENTR` showed verb 16 and noun 68 with KEY REL lit, R1 went `+02363`, `+02354`, `+02345` across simulated seconds, and the `K` key brought V06N63 back. V35 showed `88` and `+88888` with 13 of 13 lights lit for about 5 s. `V97 ENTR` lit OPR ERR and `R` put it out. V99N63 flashed from t=5 s; without PRO the throttle stayed at 0% past t=20 s, and PRO during the flash gave 10% throttle and a flame. The console showed only the favicon 404.
+
+- `src/Dsky/Dsky.php`: key handling as a port of VERBFAN, PROCKEY and CHARALRM: `press()`, the user's display with KEY REL, V05, V06, V16, V35, V37, PRO, CLR, RSET, OPR ERR and the 5 s lamp test
+- `src/Dsky/Entry.php`: enum for the register the digits go into
+- `src/Chapter/Chapter.php`: `allowedPrograms()` on the interface
+- `src/Chapter/Landing/LandingChapter.php`: V99N63 flashes from 5 s after the start and PRO ignites; `allowedPrograms()` is 63 and 00; V37 to P00 stops the engine and ends `missed`; values for N09, 60, 63, 64 and 68 on the user's display, refreshed every second for V16
+- `src/Guidance/Luminary/LandingGuidance.php`: read-only `timeToGoFrom(state)` so N68 has a time to go before the first guidance pass
+- `src/Simulation/Simulation.php`: `tick()` runs the keys through `Dsky::press()`, then `Chapter::step`, then advances the DSKY clock
+- `public/assets/dsky.js`: clickable keys and the keyboard map; blurs a key after a mouse click so Enter stays ENTR
+- `public/assets/app.js`: queues keys and sends at most 32 with the next tick
+- `public/assets/style.css`: hover, active and pressed styles for the keys
+- `tests/Dsky/DskyTest.php`: the plan's `DskyTest` cases and a serialization round trip
+- `tests/Chapter/LandingChapterTest.php`: V99 timing, no ignition without PRO, PRO ignition, V16N68 refresh and KEY REL, V37 to 00, 41 and 63
+- `tests/Guidance/LandingGuidanceTest.php`: adapted to the PRO gate; test for `timeToGoFrom`
+- `tests/Simulation/SimulationTest.php`: tick tests for keys, OPR ERR and RSET, the lamp test, V99 and PRO, session serialization
+- `tests/Support/LandingBurn.php`: test helper that runs the landing to TIG−5 s and presses PRO

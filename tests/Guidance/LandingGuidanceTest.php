@@ -12,6 +12,7 @@ use Apollo\Physics\StateVector;
 use Apollo\Scenario\LandingTargets;
 use Apollo\Scenario\StartStates;
 use Apollo\Simulation\TickInput;
+use Apollo\Tests\Support\LandingBurn;
 use Apollo\Trace\Routine;
 use PHPUnit\Framework\TestCase;
 
@@ -34,6 +35,20 @@ final class LandingGuidanceTest extends TestCase
         self::assertTrue($command->converged);
         self::assertLessThanOrEqual(LandingGuidance::MAX_ITERATIONS, $command->iterations);
         self::assertLessThan(0.0, $command->ttf, 'TTF is negative, as in the AGC');
+    }
+
+    public function testTheTimeToGoBeforeTheFirstPassIsTheTtfThePassWillFind(): void
+    {
+        $vehicle = StartStates::landingVehicle();
+        $guidance = $this->guidance();
+
+        $estimate = $guidance->timeToGoFrom(StartStates::landingState());
+        self::assertNull($guidance->ttf(), 'asking changes nothing');
+        $command = $guidance->pass(StartStates::landingState(), $vehicle->mass, $vehicle->maxThrust, 2.0);
+
+        self::assertEqualsWithDelta(-$command->ttf, $estimate, 1e-9);
+        self::assertGreaterThan(300.0, $estimate);
+        self::assertLessThan(900.0, $estimate, 'a braking burn of ten minutes or so');
     }
 
     public function testTheSolvedTtfIsARootOfTheJerkCondition(): void
@@ -78,6 +93,7 @@ final class LandingGuidanceTest extends TestCase
     public function testBrakingBringsTheLanderToHighGateAndSwitchesToP64(): void
     {
         $chapter = new LandingChapter();
+        LandingBurn::proceed($chapter);
         $ticks = 0;
 
         while ($chapter->outcome() === null) {
@@ -100,8 +116,9 @@ final class LandingGuidanceTest extends TestCase
     public function testTheDpsIgnitesAtMinimumThrottleAndGoesFlatOutAfter26Seconds(): void
     {
         $chapter = new LandingChapter();
-        self::assertSame(0.1, $chapter->vehicleView()['throttle']);
+        self::assertSame(0.0, $chapter->vehicleView()['throttle'], 'no ignition before PRO');
         self::assertSame(63, $chapter->agc()->majorMode);
+        LandingBurn::proceed($chapter);
 
         $chapter->step(25.0, new TickInput());
         self::assertSame(0.1, $chapter->vehicleView()['throttle']);
@@ -115,6 +132,7 @@ final class LandingGuidanceTest extends TestCase
     public function testTheThrottleStaysInTheDpsRangeAndTheFuelRunsDown(): void
     {
         $chapter = new LandingChapter();
+        LandingBurn::proceed($chapter);
         $previousFuel = 1.0;
 
         for ($i = 0; $i < 2000 && $chapter->outcome() === null; $i++) {

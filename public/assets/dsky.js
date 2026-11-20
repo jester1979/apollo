@@ -1,6 +1,6 @@
 // Draws the DSKY in HTML and CSS: PROG, VERB and NOUN, the registers R1 to R3, the lights and the
-// 19 keys. Every text goes in through textContent. The keys are drawn only; pressing them does
-// nothing yet.
+// 19 keys. Every text goes in through textContent. A key press, by mouse or keyboard, is handed to
+// `onKey` as the name of the Key enum of the API; the page sends the queued keys with the next tick.
 
 const LIGHTS = [
     ['compActy', 'COMP ACTY'],
@@ -17,6 +17,58 @@ const LIGHTS = [
     ['alt', 'ALT'],
     ['vel', 'VEL'],
 ];
+
+// The key names of the API (the Key enum on the server) per key label.
+const KEY_NAMES = {
+    'VERB': 'VERB',
+    'NOUN': 'NOUN',
+    'ENTR': 'ENTR',
+    'PRO': 'PRO',
+    'CLR': 'CLR',
+    'RSET': 'RSET',
+    'KEY REL': 'KEY_REL',
+    '+': 'PLUS',
+    '-': 'MINUS',
+};
+
+// The keyboard: V, N, Enter, P, C, R, K, + and -, and the digits.
+const KEYBOARD = {
+    'v': 'VERB',
+    'n': 'NOUN',
+    'Enter': 'ENTR',
+    'p': 'PRO',
+    'c': 'CLR',
+    'r': 'RSET',
+    'k': 'KEY_REL',
+    '+': 'PLUS',
+    '-': 'MINUS',
+};
+
+function keyboardName(key) {
+    if (/^[0-9]$/.test(key)) {
+        return key;
+    }
+    for (const candidate of [key, key.toLowerCase()]) {
+        if (Object.hasOwn(KEYBOARD, candidate)) {
+            return KEYBOARD[candidate];
+        }
+    }
+
+    return undefined;
+}
+
+// Shows a keyboard press on the key of the panel for a moment.
+function flashKey(buttons, name) {
+    const button = buttons.find((candidate) => candidate.dataset.key === name);
+    if (button) {
+        button.classList.add('pressed');
+        setTimeout(() => button.classList.remove('pressed'), 150);
+    }
+}
+
+function keyName(label) {
+    return Object.hasOwn(KEY_NAMES, label) ? KEY_NAMES[label] : label;
+}
 
 // The 19 keys: VERB and NOUN on the left, the sign and digit block in the middle, five control keys
 // on the right.
@@ -47,10 +99,13 @@ function labelled(title, valueClass) {
 }
 
 /**
- * Builds the DSKY inside `container` and returns `{ render(dsky) }`, where `dsky` is the `dsky`
- * object of the tick response.
+ * Builds the DSKY inside `container` and returns `{ render(dsky), setEnabled(enabled) }`, where
+ * `dsky` is the `dsky` object of the tick response. `onKey(name)` gets the API name of every key
+ * pressed on the keys or the keyboard while the DSKY is enabled.
  */
-export function createDsky(container) {
+export function createDsky(container, onKey = () => {}) {
+    let enabled = false;
+    const buttons = [];
     const lights = new Map();
     const lightPanel = element('div', 'dsky-lights');
     for (const [name, label] of LIGHTS) {
@@ -80,7 +135,18 @@ export function createDsky(container) {
             const button = element('button', 'dsky-key', key);
             button.type = 'button';
             button.disabled = true;
-            button.dataset.key = key;
+            button.dataset.key = keyName(key);
+            button.addEventListener('click', (event) => {
+                if (enabled) {
+                    onKey(keyName(key));
+                }
+                // After a mouse click the focus must not stay on the key: Enter on the keyboard is
+                // ENTR, not another press of the key that was clicked. (Keyboard activation has detail 0.)
+                if (event.detail > 0) {
+                    button.blur();
+                }
+            });
+            buttons.push(button);
             group.append(button);
         }
         keypad.append(group);
@@ -90,7 +156,30 @@ export function createDsky(container) {
     panel.append(display, keypad);
     container.replaceChildren(panel);
 
+    document.addEventListener('keydown', (event) => {
+        if (!enabled || event.repeat || event.ctrlKey || event.metaKey || event.altKey) {
+            return;
+        }
+        // Typing in a field, or Enter on a focused button (which clicks it itself), is not a DSKY key.
+        const target = event.target instanceof Element ? event.target : null;
+        if (target?.closest('input, textarea, select') || (event.key === 'Enter' && target?.closest('button'))) {
+            return;
+        }
+
+        const name = keyboardName(event.key);
+        if (name !== undefined) {
+            onKey(name);
+            flashKey(buttons, name);
+        }
+    });
+
     return {
+        setEnabled(value) {
+            enabled = value;
+            for (const button of buttons) {
+                button.disabled = !value;
+            }
+        },
         render(dsky) {
             prog.value.textContent = dsky.prog;
             verb.value.textContent = dsky.verb;

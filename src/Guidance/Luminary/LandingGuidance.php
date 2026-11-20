@@ -45,6 +45,19 @@ final class LandingGuidance
     }
 
     /**
+     * The time to go in seconds (positive) that ROOTPSRS finds for a state, without running a pass or
+     * touching the TTF the guidance keeps. N68 shows it before the first pass has run.
+     */
+    public function timeToGoFrom(StateVector $state): float
+    {
+        $site = $this->siteFrame($state);
+        $guess = $this->initialTtf($site['rh'], $site['vh']);
+        [$root, , $converged] = $this->solveTtf($guess, $site['rh'], $site['vh']);
+
+        return -($converged && $root < 0.0 ? $root : $guess);
+    }
+
+    /**
      * One guidance pass: TTFINCR, TTF/8CL (ROOTPSRS), then QUADGUID.
      *
      * @param float $elapsed seconds since the previous pass (TTFINCR moves TTF that much towards zero)

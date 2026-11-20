@@ -516,10 +516,10 @@ Voor slice 1 is `git init` nodig, plus een remote naar `git@github.com:jester197
   - [x] COMP ACTY licht op als de geleiding rekent.
   - [x] `DisplayFormatterTest` slaagt.
 - **4. DSKY-invoer.** AFK. Blocked by: 3.
-  - [ ] Met de muis of het toetsenbord geeft `V16N68 ENTR` een weergave van de afstand tot het landingspunt, die elke seconde ververst, en KEY REL brengt V06N63 terug.
-  - [ ] V35 test alle lampjes. Een onbekend verb of noun zet OPR ERR aan, en RSET dooft het.
-  - [ ] Voor de ontsteking knippert V99N63 vanaf TIG−5 s. Zonder PRO volgt geen ontsteking, met PRO wel.
-  - [ ] `DskyTest` slaagt.
+  - [x] Met de muis of het toetsenbord geeft `V16N68 ENTR` een weergave van de afstand tot het landingspunt, die elke seconde ververst, en KEY REL brengt V06N63 terug.
+  - [x] V35 test alle lampjes. Een onbekend verb of noun zet OPR ERR aan, en RSET dooft het.
+  - [x] Voor de ontsteking knippert V99N63 vanaf TIG−5 s. Zonder PRO volgt geen ontsteking, met PRO wel.
+  - [x] `DskyTest` slaagt.
 - **5. Codepaneel en log.** AFK. Blocked by: 4.
   - [ ] Het codepaneel toont tijdens P63 `QUADGUID` met `Luminary099/LUNAR_LANDING_GUIDANCE_EQUATIONS.agc:546`, als link naar die regel op GitHub (commit `e7576d5…`).
   - [ ] Elke DSKY-invoer verschijnt in het log als "invoer → reactie", met de Pinball-routine erbij, en programmawissels verschijnen als `agc`-regels.

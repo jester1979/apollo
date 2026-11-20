@@ -13,6 +13,13 @@ interface Chapter
 
     public function agc(): Agc;
 
+    /**
+     * The programs V37 may select: the start program of the chapter and 00. Any other number is OPR ERR.
+     *
+     * @return list<int>
+     */
+    public function allowedPrograms(): array;
+
     /** Advance $dt seconds of simulated time, in 0.1 s physics steps. */
     public function step(float $dt, TickInput $input): void;
 

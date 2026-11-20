@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Apollo\Tests\Simulation;
 
 use Apollo\Chapter\ChapterId;
+use Apollo\Dsky\Key;
 use Apollo\Simulation\ChapterNotAvailable;
 use Apollo\Simulation\Simulation;
 use Apollo\Simulation\TickInput;
@@ -78,6 +79,11 @@ final class SimulationTest extends TestCase
     {
         $simulation = new Simulation();
         $simulation->start(ChapterId::Landing, false);
+        $simulation->tick(new TickInput(speed: 5)); // 0.5 s
+        for ($i = 0; $i < 9; $i++) {
+            $simulation->tick(new TickInput(speed: 5)); // up to TIG-5 s
+        }
+        $simulation->tick(new TickInput(keys: [Key::Proceed], speed: 10));
 
         $response = [];
         for ($i = 0; $i < 1000 && ($response['outcome'] ?? null) === null; $i++) {
@@ -103,5 +109,98 @@ final class SimulationTest extends TestCase
         $this->expectException(\LogicException::class);
 
         (new Simulation())->tick(new TickInput());
+    }
+
+    /**
+     * @param list<Key> $keys
+     * @return array<string, mixed>
+     */
+    private function tick(Simulation $simulation, array $keys = [], int $speed = 1): array
+    {
+        return $simulation->tick(new TickInput(keys: $keys, speed: $speed));
+    }
+
+    public function testKeysPressedInATickShowInThatTicksDsky(): void
+    {
+        $simulation = new Simulation();
+        $simulation->start(ChapterId::Landing, false);
+
+        $response = $this->tick($simulation, [Key::Verb, Key::One, Key::Six, Key::Noun, Key::Six, Key::Eight, Key::Enter]);
+
+        self::assertSame('16', $response['dsky']['verb']);
+        self::assertSame('68', $response['dsky']['noun']);
+        self::assertTrue($response['dsky']['lights']['keyRel']);
+        self::assertMatchesRegularExpression('/^\+\d{5}$/', $response['dsky']['r1']);
+
+        $response = $this->tick($simulation, [Key::KeyRelease]);
+        self::assertSame('06', $response['dsky']['verb']);
+        self::assertSame('63', $response['dsky']['noun']);
+        self::assertFalse($response['dsky']['lights']['keyRel']);
+    }
+
+    public function testAnUnknownVerbLightsOprErrAndRsetPutsItOut(): void
+    {
+        $simulation = new Simulation();
+        $simulation->start(ChapterId::Landing, false);
+
+        $response = $this->tick($simulation, [Key::Verb, Key::Nine, Key::Seven, Key::Enter]);
+        self::assertTrue($response['dsky']['lights']['oprErr']);
+
+        $response = $this->tick($simulation, [Key::Reset]);
+        self::assertFalse($response['dsky']['lights']['oprErr']);
+    }
+
+    public function testTheLampTestLastsFiveSimulatedSeconds(): void
+    {
+        $simulation = new Simulation();
+        $simulation->start(ChapterId::Landing, false);
+
+        $response = $this->tick($simulation, [Key::Verb, Key::Three, Key::Five, Key::Enter], 5);
+        self::assertSame('+88888', $response['dsky']['r1']);
+        self::assertNotContains(false, $response['dsky']['lights']);
+
+        for ($i = 0; $i < 8; $i++) {
+            $response = $this->tick($simulation, [], 5); // 0.5 s each
+        }
+        self::assertSame('+88888', $response['dsky']['r1'], 'still on at 4.5 s');
+
+        $response = $this->tick($simulation, [], 5);
+        self::assertSame('99', $response['dsky']['verb'], 'the program display is back, and it is V99 by now (t = 5 s)');
+        self::assertFalse($response['dsky']['lights']['keyRel']);
+        self::assertFalse($response['dsky']['lights']['oprErr']);
+    }
+
+    public function testV99FlashesAtTigMinus5AndProStartsTheBurn(): void
+    {
+        $simulation = new Simulation();
+        $simulation->start(ChapterId::Landing, false);
+
+        $response = $this->tick($simulation, [], 10);
+        self::assertSame(['06', false], [$response['dsky']['verb'], $response['dsky']['flash']]);
+        self::assertSame(0.0, $response['vehicle']['throttle']);
+
+        for ($i = 0; $i < 4; $i++) {
+            $response = $this->tick($simulation, [], 10);
+        }
+        self::assertSame(['99', '63', true], [$response['dsky']['verb'], $response['dsky']['noun'], $response['dsky']['flash']]);
+        self::assertSame(0.0, $response['vehicle']['throttle'], 'no ignition without PRO');
+
+        $response = $this->tick($simulation, [Key::Proceed]);
+        self::assertSame(0.1, $response['vehicle']['throttle']);
+        self::assertSame(['06', false], [$response['dsky']['verb'], $response['dsky']['flash']]);
+    }
+
+    public function testTheSimulationSurvivesTheSessionSerializationAfterKeys(): void
+    {
+        $simulation = new Simulation();
+        $simulation->start(ChapterId::Landing, false);
+        $this->tick($simulation, [Key::Verb, Key::One, Key::Six, Key::Noun, Key::Six]);
+
+        $copy = unserialize(serialize($simulation));
+
+        $before = $this->tick($simulation, [Key::Eight, Key::Enter]);
+        $after = $this->tick($copy, [Key::Eight, Key::Enter]);
+        self::assertSame($before['dsky'], $after['dsky']);
+        self::assertSame('68', $after['dsky']['noun']);
     }
 }
