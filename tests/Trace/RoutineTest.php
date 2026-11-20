@@ -151,6 +151,28 @@ final class RoutineTest extends TestCase
         self::assertSame([], $lines, 'every ascent routine is a case');
     }
 
+    public function testTheLabelsOfTheEntryRoutinesPointAtTheirLines(): void
+    {
+        $lines = [
+            'P63' => ['Comanche055/P61-P67.agc', 299],
+            'P64' => ['Comanche055/P61-P67.agc', 364],
+            'P66' => ['Comanche055/P61-P67.agc', 433],
+            'P67' => ['Comanche055/P61-P67.agc', 457],
+            'STARTENT' => ['Comanche055/REENTRY_CONTROL.agc', 48],
+            'UPCONTRL' => ['Comanche055/REENTRY_CONTROL.agc', 873],
+            'KEP2' => ['Comanche055/REENTRY_CONTROL.agc', 1098],
+            'PREDICT3' => ['Comanche055/REENTRY_CONTROL.agc', 1130],
+        ];
+        foreach (Routine::cases() as $routine) {
+            if (isset($lines[$routine->label()])) {
+                self::assertSame($lines[$routine->label()], [$routine->file(), $routine->line()], $routine->label());
+                unset($lines[$routine->label()]);
+            }
+        }
+
+        self::assertSame([], $lines, 'every entry routine is a case');
+    }
+
     public function testNoTwoRoutinesShareALabel(): void
     {
         $labels = array_map(static fn (Routine $routine): string => $routine->label(), Routine::cases());

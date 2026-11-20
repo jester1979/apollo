@@ -6,7 +6,6 @@ namespace Apollo\Tests\Simulation;
 
 use Apollo\Chapter\ChapterId;
 use Apollo\Dsky\Key;
-use Apollo\Simulation\ChapterNotAvailable;
 use Apollo\Simulation\Simulation;
 use Apollo\Simulation\TickInput;
 use PHPUnit\Framework\TestCase;
@@ -126,11 +125,14 @@ final class SimulationTest extends TestCase
         self::assertEqualsWithDelta($response['vehicle']['vz'] - 0.3048, $response['vehicle']['desiredRate'], 0.5);
     }
 
-    public function testAnUnbuiltChapterIsRefused(): void
+    public function testEveryChapterCanBeStarted(): void
     {
-        $this->expectException(ChapterNotAvailable::class);
+        foreach (ChapterId::cases() as $id) {
+            $response = (new Simulation())->start($id, false);
 
-        (new Simulation())->start(ChapterId::Entry, false);
+            self::assertSame($id->value, $response['chapter']);
+            self::assertNull($response['outcome']);
+        }
     }
 
     public function testTickBeforeStartIsALogicError(): void

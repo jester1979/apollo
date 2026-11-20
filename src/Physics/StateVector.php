@@ -43,6 +43,14 @@ final readonly class StateVector
         return ($this->y * $this->vx - $this->x * $this->vy) / $this->radius();
     }
 
+    /** Speed relative to the air, which turns with the body (see Body::rotationRate()), in m/s. */
+    public function airSpeed(Body $body): float
+    {
+        $rotation = $body->rotationRate();
+
+        return hypot($this->vx - $rotation * $this->y, $this->vy + $rotation * $this->x);
+    }
+
     /** Ground-track angle in radians, measured clockwise from the +y axis. */
     public function angle(): float
     {

@@ -197,4 +197,50 @@ final class StartStates
     {
         return new StateVector(0.0, Body::Earth->radius(), Body::Earth->rotationRate() * Body::Earth->radius(), 0.0);
     }
+
+    /**
+     * The entry interface: the command module 122 km (400 000 ft) above the Earth, 11 030 m/s (36 190 ft/s)
+     * inertial, on a flight path 6.5 degrees below the local horizontal. It flies clockwise in the 2D plane,
+     * like the launch, and the clock of the chapter starts here.
+     */
+    public const ENTRY_ALTITUDE = 122000.0;
+    public const ENTRY_SPEED = 11030.0;
+    public const ENTRY_ANGLE = -6.5;
+
+    /**
+     * The command module at entry: about 5.5 t, a drag area (Cd times the 12 m^2 of the heat shield at about 1.3)
+     * of 15.5 m^2 and a lift-to-drag ratio of 0.3 (the trim angle of the real capsule gives 0.3 to 0.35).
+     */
+    public const ENTRY_MASS = 5560.0;
+    public const ENTRY_DRAG_AREA = 15.5;
+    public const ENTRY_LIFT_TO_DRAG = 0.3;
+
+    /** The target on the ground: this far from the entry interface along the surface, in metres (1350 nautical miles). */
+    public const ENTRY_TARGET_RANGE = 2500000.0;
+
+    /** The entry interface; $flightPathAngle in degrees, negative below the horizontal. */
+    public static function entryState(float $flightPathAngle = self::ENTRY_ANGLE): StateVector
+    {
+        $angle = deg2rad($flightPathAngle);
+
+        return new StateVector(
+            0.0,
+            Body::Earth->radius() + self::ENTRY_ALTITUDE,
+            self::ENTRY_SPEED * cos($angle),
+            self::ENTRY_SPEED * sin($angle),
+        );
+    }
+
+    /** The command module: no engine, only drag and lift. The bank angle is set by the guidance. */
+    public static function entryVehicle(): Vehicle
+    {
+        return new Vehicle(
+            mass: self::ENTRY_MASS,
+            dryMass: self::ENTRY_MASS,
+            maxThrust: 0.0,
+            isp: self::SPS_ISP,
+            dragArea: self::ENTRY_DRAG_AREA,
+            liftToDrag: self::ENTRY_LIFT_TO_DRAG,
+        );
+    }
 }

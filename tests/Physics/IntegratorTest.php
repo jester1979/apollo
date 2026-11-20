@@ -112,4 +112,52 @@ final class IntegratorTest extends TestCase
         self::assertEqualsWithDelta(1.225 / M_E, $atmosphere->density(7200.0), 1e-9);
         self::assertNull(Body::Moon->atmosphere());
     }
+
+    /** One short step of the command module at 60 km, 7 km/s, level and clockwise, with the given bank angle. */
+    private function glide(float $bank, float $liftToDrag = 0.3): StateVector
+    {
+        $vehicle = new Vehicle(mass: 5560.0, dryMass: 5560.0, maxThrust: 0.0, isp: 300.0, dragArea: 15.5, liftToDrag: $liftToDrag, bank: $bank);
+
+        return (new Integrator())->step($vehicle, new StateVector(0.0, Body::Earth->radius() + 60000.0, 7000.0, 0.0), Body::Earth, 0.01);
+    }
+
+    public function testTheLiftIsTheDragTimesLiftToDragAndPointsUpAtBankZero(): void
+    {
+        $start = new StateVector(0.0, Body::Earth->radius() + 60000.0, 7000.0, 0.0);
+        $airSpeed = $start->airSpeed(Body::Earth);
+        $drag = 0.5 * (Body::Earth->atmosphere()?->density(60000.0) ?? 0.0) * $airSpeed ** 2 * 15.5 / 5560.0;
+        $gravity = Body::Earth->mu() / $start->radius() ** 2;
+        $noLift = $this->glide(M_PI / 2.0, 0.0);
+
+        $lift = ($this->glide(0.0)->vy - $noLift->vy) / 0.01;
+
+        self::assertGreaterThan(0.0, $drag);
+        self::assertEqualsWithDelta(0.3 * $drag, $lift, 0.3 * $drag * 0.01);
+        self::assertEqualsWithDelta(-$gravity, ($noLift->vy) / 0.01, 0.05 * $gravity, 'only gravity pulls down when there is no lift');
+    }
+
+    public function testTheLiftScalesWithTheCosineOfTheBankAngle(): void
+    {
+        $up = $this->glide(0.0)->vy;
+        $sideways = $this->glide(M_PI / 2.0)->vy;
+        $sixty = $this->glide(M_PI / 3.0)->vy;
+        $down = $this->glide(M_PI)->vy;
+
+        self::assertEqualsWithDelta(($up - $sideways) * 0.5, $sixty - $sideways, ($up - $sideways) * 0.01);
+        self::assertEqualsWithDelta($up - $sideways, $sideways - $down, ($up - $sideways) * 0.01, 'down is the mirror image of up');
+        self::assertEqualsWithDelta($sideways, $this->glide(0.0, 0.0)->vy, 1e-9, 'bank 90 degrees is the same as no lift');
+    }
+
+    public function testTheLiftDoesNotChangeTheSpeedThroughTheAir(): void
+    {
+        $start = new StateVector(0.0, Body::Earth->radius() + 60000.0, 7000.0, 0.0);
+
+        // Lift is perpendicular to the relative velocity, so a short step changes the air speed by drag
+        // and gravity alone, the same with the lift up and with it down.
+        self::assertEqualsWithDelta(
+            $this->glide(0.0)->airSpeed(Body::Earth) - $start->airSpeed(Body::Earth),
+            $this->glide(M_PI)->airSpeed(Body::Earth) - $start->airSpeed(Body::Earth),
+            1e-3,
+        );
+    }
 }

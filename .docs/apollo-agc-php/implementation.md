@@ -271,3 +271,29 @@ The builder of slice 7 reported that a landing with PRO at about t=20 s ended `c
 - `tests/Chapter/TeiChapterTest.php`: the P40 flow, success at 1×, late PROs, no PRO, P00 mid-burn, all CM nouns keyable, serialization
 - `tests/Physics/ConicTest.php`: `specificEnergy()` against the vis-viva energy
 - `tests/Simulation/SimulationTest.php`, `tests/Http/ApiControllerTest.php`: the unbuilt-chapter tests now use `entry`
+
+### 12. Terugkeer (P63 t/m P67, CM)
+
+Verified by two builders. `vendor/bin/phpunit` passed with 339 tests and 51669 assertions, including `EntryChapterTest`, and `vendor/bin/phpstan analyse` reported no errors. The slowest tick at speed 10 took 32.5 ms. In tests a start at −5.5° skips out and a start at −9.0° exceeds 12 g; both end `missed`. In Chrome, "Entry" started with PROG 63 and V06N64, no visible glow and a bank dial at 60°. At t=28.4 s the DSKY showed PROG 64 with V06N74; at the drag peak at t=89.0 s (load 9.28 g) the Canvas showed a large glow and a plasma wake; from t=182 s it showed PROG 67 with V06N66, and at t=430.7 s V16N67. At t=490.9 s the Canvas showed three parachutes at 7.0 km and 130 m/s, and the page showed "Outcome: success". The code panel linked STARTENT, UPCONTRL and PREDICT3 to `Comanche055/REENTRY_CONTROL.agc` lines 48, 873 and 1130. The other five chapters each started through the chooser without a console error.
+
+- `src/Physics/Vehicle.php`: `liftToDrag` and `bank` for the lifting entry
+- `src/Physics/Integrator.php`: lift in the atmosphere, perpendicular to the air-relative velocity, scaled by cos(bank); unchanged when `liftToDrag` is 0
+- `src/Physics/StateVector.php`: `airSpeed(Body)`, the speed relative to the co-rotating air
+- `src/Scenario/StartStates.php`: entry state (122 km, 11 030 m/s, −6.5°) and CM data (5 560 kg, drag area 15.5 m², L/D 0.3, target 2 500 km downrange)
+- `src/Guidance/Comanche/EntryGuidance.php`: simplified port of STARTENT, UPCONTRL, KEP2 and PREDICT3; the predictor has a bounded step count and bisects on cos(bank)
+- `src/Guidance/Comanche/EntryProgram.php`: enum of the entry programs P63, P64, P66, P67
+- `src/Chapter/Entry/EntryChapter.php`: the entry chapter (programs, DSKY displays, outcomes, view, all CM noun values)
+- `src/Simulation/Simulation.php`: builds `EntryChapter`; no chapter is unbuilt; entry program names
+- `src/Simulation/ChapterNotAvailable.php`: deleted, because nothing can throw it
+- `src/Http/ApiController.php`: the unreachable 501 catch is removed
+- `src/Trace/Routine.php`: eight entry routines, line numbers checked against the source
+- `src/Dsky/Unit.php`, `src/Dsky/NounTable.php`: a g unit; CM nouns 60, 63, 64, 65, 66, 67, 69 and 74 from Comanche's noun list
+- `src/Chapter/Launch/LaunchChapter.php`, `src/Chapter/Burn/P40BurnChapter.php`: zeros for the new CM nouns
+- `public/assets/views/entry.js`: glow and plasma wake that scale with drag, a bank-angle dial, three parachutes at the end
+- `public/assets/app.js`, `public/index.php`: registers the entry view, removes the 501 branch; one sentence of intro text
+- `tests/Chapter/EntryChapterTest.php`: success at 1× and at speed 10, program flow and displays, skip and overload as `missed`, P00, serialization, the slowest-tick bound
+- `tests/Guidance/EntryGuidanceTest.php`: each phase transition, the P66 path, the predictor within 2 km
+- `tests/Chapter/CmNounsTest.php`: every CM noun can be displayed in every CM chapter
+- `tests/Physics/IntegratorTest.php`: lift magnitude, direction and cos(bank) scaling
+- `tests/Trace/RoutineTest.php`, `tests/Dsky/NounTableTest.php`, `tests/Dsky/DskyTest.php`: entry routines and nouns; the unknown-noun case for the CM uses N68
+- `tests/Simulation/SimulationTest.php`, `tests/Http/ApiControllerTest.php`: every chapter can be started

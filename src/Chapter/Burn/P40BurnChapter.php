@@ -606,6 +606,8 @@ abstract class P40BurnChapter implements Chapter
             9 => array_map(floatval(...), $this->agc->executive->alarmCodes()),
             // 25: the checklist code in R1.
             25 => [self::CHECKLIST_CODE, 0.0, 0.0],
+            // 60 to 69 and 74: the nouns of the entry programs; a burn has no entry data, so they hold zeros.
+            60, 63, 64, 65, 66, 67, 69, 74 => [0.0, 0.0, 0.0],
             // 40: time from ignition (cutoff), VG, accumulated delta-V.
             40 => $this->burnValues(),
             // 62: inertial velocity magnitude, altitude rate change, altitude.

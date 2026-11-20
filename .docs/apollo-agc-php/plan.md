@@ -553,9 +553,9 @@ Voor slice 1 is `git init` nodig, plus een remote naar `git@github.com:jester197
   - [x] Na "Trans-Earth injection" volgt hetzelfde P40-verloop als bij LOI, nu prograde. Het bovenaanzicht toont de baan die openbreekt naar een ontsnappingsbaan.
   - [x] `TeiChapterTest` slaagt.
 - **12. Terugkeer (P63 t/m P67, CM).** AFK. Blocked by: 8.
-  - [ ] Na "Entry" laat het Canvas de CM met een gloed zien die met de weerstand meegroeit, en een bankhoekwijzer. De DSKY wisselt van P63 naar P64 naar P67, met de weergaven uit §8.
-  - [ ] Het hoofdstuk eindigt met parachutes en `success`. De maximale belasting blijft onder 12 g.
-  - [ ] `EntryChapterTest` slaagt.
+  - [x] Na "Entry" laat het Canvas de CM met een gloed zien die met de weerstand meegroeit, en een bankhoekwijzer. De DSKY wisselt van P63 naar P64 naar P67, met de weergaven uit §8.
+  - [x] Het hoofdstuk eindigt met parachutes en `success`. De maximale belasting blijft onder 12 g.
+  - [x] `EntryChapterTest` slaagt.
 - **13. Tussenstukken, missieverloop, tijdversnelling en README.** AFK. Blocked by: 7, 10, 11, 12.
   - [ ] Na een geslaagd hoofdstuk toont de pagina "Next chapter". Die knop speelt het tussenstuk af (een animatie van een paar seconden met een korte Engelse tekst) en start dan het volgende hoofdstuk. Na de terugkeer toont de pagina "Mission complete".
   - [ ] De tussenstukken zijn:

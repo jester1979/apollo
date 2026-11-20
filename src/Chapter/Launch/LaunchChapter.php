@@ -285,6 +285,8 @@ final class LaunchChapter implements Chapter
             9 => array_map(floatval(...), $this->agc->executive->alarmCodes()),
             // 25 and 40: P11 loads no checklist code and plans no burn, so the registers hold nothing but zeros.
             25, 40 => [0.0, 0.0, 0.0],
+            // 60 to 69 and 74: the nouns of the entry programs; the launch has no entry data, so they hold zeros.
+            60, 63, 64, 65, 66, 67, 69, 74 => [0.0, 0.0, 0.0],
             // 62: inertial velocity magnitude, altitude rate change, altitude above pad radius.
             62 => $this->monitor->displayValues($this->state, Body::Earth),
             default => throw new \LogicException(sprintf('Noun %d has no values in the launch', $noun)),

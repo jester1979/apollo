@@ -61,6 +61,14 @@ enum Routine
     case Steering;     // Comanche055/P40-P47.agc:819
     case S408;         // Comanche055/P40-P47.agc:1646
     case S4081;        // Comanche055/P40-P47.agc:1759
+    case P63Cm;        // Comanche055/P61-P67.agc:299
+    case P64Cm;        // Comanche055/P61-P67.agc:364
+    case P66Cm;        // Comanche055/P61-P67.agc:433
+    case P67Cm;        // Comanche055/P61-P67.agc:457
+    case StartEnt;     // Comanche055/REENTRY_CONTROL.agc:48
+    case UpControl;    // Comanche055/REENTRY_CONTROL.agc:873
+    case Kep2;         // Comanche055/REENTRY_CONTROL.agc:1098
+    case Predict3;     // Comanche055/REENTRY_CONTROL.agc:1130
 
     public const COMMIT = 'e7576d50f7c279a707cfaa71be2020592dbf43a8';
 
@@ -117,6 +125,14 @@ enum Routine
             self::Steering => 'STEERING',
             self::S408 => 'S40.8',
             self::S4081 => 'S40.81',
+            self::P63Cm => 'P63',
+            self::P64Cm => 'P64',
+            self::P66Cm => 'P66',
+            self::P67Cm => 'P67',
+            self::StartEnt => 'STARTENT',
+            self::UpControl => 'UPCONTRL',
+            self::Kep2 => 'KEP2',
+            self::Predict3 => 'PREDICT3',
         };
     }
 
@@ -139,6 +155,8 @@ enum Routine
             self::P11, self::Vhhdot => 'Comanche055/P11.agc',
             self::P40Csm, self::PostBurn, self::Tig5, self::V99P, self::V99PTig, self::UpdateVg, self::Steering,
             self::S408, self::S4081 => 'Comanche055/P40-P47.agc',
+            self::P63Cm, self::P64Cm, self::P66Cm, self::P67Cm => 'Comanche055/P61-P67.agc',
+            self::StartEnt, self::UpControl, self::Kep2, self::Predict3 => 'Comanche055/REENTRY_CONTROL.agc',
         };
     }
 
@@ -195,6 +213,14 @@ enum Routine
             self::Steering => 819,
             self::S408 => 1646,
             self::S4081 => 1759,
+            self::P63Cm => 299,
+            self::P64Cm => 364,
+            self::P66Cm => 433,
+            self::P67Cm => 457,
+            self::StartEnt => 48,
+            self::UpControl => 873,
+            self::Kep2 => 1098,
+            self::Predict3 => 1130,
         };
     }
 

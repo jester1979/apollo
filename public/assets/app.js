@@ -1,6 +1,7 @@
 import { createCodePanel } from './codepanel.js';
 import { createDsky } from './dsky.js';
 import { render as renderAscent } from './views/ascent.js';
+import { render as renderEntry } from './views/entry.js';
 import { render as renderLanding } from './views/landing.js';
 import { render as renderLaunch } from './views/launch.js';
 import { render as renderOrbit } from './views/orbit.js';
@@ -9,12 +10,13 @@ const API_URL = '/api.php';
 const TICK_INTERVAL_MS = 100;
 
 const views = {
-    ascent: renderAscent, landing: renderLanding, launch: renderLaunch, orbit: renderOrbit,
+    ascent: renderAscent, entry: renderEntry, landing: renderLanding, launch: renderLaunch, orbit: renderOrbit,
 };
 
 // What the canvas shows for each view, for assistive technology.
 const VIEW_LABELS = {
     ascent: 'Lunar module ascent stage lifting off from the descent stage, which stays on the lunar surface, side view',
+    entry: 'Command module entering the atmosphere, side view, with a glow that grows with the drag, a bank angle pointer and parachutes at the end',
     landing: 'Lunar module braking above the lunar surface',
     launch: 'Saturn V climbing to orbit, side view',
     orbit: 'Command and service module near the Moon, top view, with the path flown and the path predicted',
@@ -171,10 +173,7 @@ async function run() {
             show(state);
         }
     } catch (error) {
-        // 501: the API knows the chapter but it is not built yet.
-        statusLine.textContent = error.status === 501
-            ? 'This chapter is not available yet.'
-            : `Error: ${error.message}`;
+        statusLine.textContent = `Error: ${error.message}`;
     } finally {
         if (myRun === runId) {
             running = false;

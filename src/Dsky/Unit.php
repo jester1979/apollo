@@ -18,8 +18,11 @@ enum Unit
     case FeetPerSecond;
     case NauticalMiles;
     case Degrees;
+    case G;
 
-    /** Converts a value in SI units (m, m/s, s, rad) to this unit. */
+    private const STANDARD_GRAVITY = 9.80665;
+
+    /** Converts a value in SI units (m, m/s, m/s^2, s, rad) to this unit. */
     public function fromSi(float $value): float
     {
         return match ($this) {
@@ -27,6 +30,7 @@ enum Unit
             self::Feet, self::FeetPerSecond => $value / 0.3048,
             self::NauticalMiles => $value / 1852.0,
             self::Degrees => rad2deg($value),
+            self::G => $value / self::STANDARD_GRAVITY,
         };
     }
 }

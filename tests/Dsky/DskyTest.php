@@ -100,7 +100,7 @@ final class DskyTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
 
-        (new Dsky(Computer::Cm))->requestDisplay(6, 63, false);
+        (new Dsky(Computer::Cm))->requestDisplay(6, 68, false); // N68 is a noun of the LM table only
     }
 
     public function testAVerbThatDoesNotDisplayANounIsRefused(): void

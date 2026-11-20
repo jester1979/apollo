@@ -7,6 +7,7 @@ namespace Apollo\Simulation;
 use Apollo\Chapter\Ascent\AscentChapter;
 use Apollo\Chapter\Chapter;
 use Apollo\Chapter\ChapterId;
+use Apollo\Chapter\Entry\EntryChapter;
 use Apollo\Chapter\Landing\LandingChapter;
 use Apollo\Chapter\Launch\LaunchChapter;
 use Apollo\Chapter\Loi\LoiChapter;
@@ -24,7 +25,6 @@ class Simulation
 
     /**
      * @return array<string, mixed> the tick response
-     * @throws ChapterNotAvailable when the chapter is not built yet
      */
     public function start(ChapterId $id, bool $scenario): array
     {
@@ -34,7 +34,7 @@ class Simulation
             ChapterId::Landing => new LandingChapter(null, $scenario),
             ChapterId::Ascent => new AscentChapter(),
             ChapterId::TransEarthInjection => new TeiChapter(),
-            default => throw new ChapterNotAvailable(),
+            ChapterId::Entry => new EntryChapter(),
         };
         $this->scenario = $scenario;
         $this->speed = 1;
@@ -93,6 +93,16 @@ class Simulation
 
     private function programName(ChapterId $chapter, int $majorMode): string
     {
+        if ($chapter === ChapterId::Entry) {
+            return match ($majorMode) {
+                63 => 'P63 – Entry: waiting for the first drag, 0.05 g (STARTENT)',
+                64 => 'P64 – Entry steering, lift up (UPCONTRL)',
+                66 => 'P66 – Ballistic phase (KEP2)',
+                67 => 'P67 – Final phase, bank angle from the range predictor (PREDICT3)',
+                0 => 'P00 – No guidance (the bank angle is kept)',
+                default => sprintf('P%02d', $majorMode),
+            };
+        }
         if ($chapter === ChapterId::Launch && $majorMode === 11) {
             return 'P11 – Earth orbit insertion monitor (the Saturn V is flown by the LVDC, whose code is not in the source)';
         }

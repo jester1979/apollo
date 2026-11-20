@@ -43,15 +43,17 @@ final class ApiControllerTest extends TestCase
         self::assertArrayHasKey('simulation', $session);
     }
 
-    public function testAChapterThatIsNotBuiltYetIsReportedWithoutDetails(): void
+    public function testEveryChapterStartsThroughTheApi(): void
     {
-        $session = [];
-        $controller = new ApiController(new SessionStore($session));
+        foreach (ChapterId::cases() as $id) {
+            $session = [];
+            $controller = new ApiController(new SessionStore($session));
 
-        $response = $controller->handle('POST', 'application/json', '{"action":"start","chapter":"entry","scenario":false}');
+            $response = $controller->handle('POST', 'application/json', sprintf('{"action":"start","chapter":"%s","scenario":false}', $id->value));
 
-        self::assertSame(501, $response->status);
-        self::assertSame(['error'], array_keys($response->body));
+            self::assertSame(200, $response->status, $id->value);
+            self::assertSame($id->value, $response->body['chapter']);
+        }
     }
 
     public function testAThrowableInTheSimulationGivesAnInternalErrorWithoutAPath(): void

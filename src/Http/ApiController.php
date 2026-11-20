@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Apollo\Http;
 
-use Apollo\Simulation\ChapterNotAvailable;
 use Apollo\Simulation\SessionStore;
 use Apollo\Simulation\Simulation;
 
@@ -50,8 +49,6 @@ final class ApiController
             return new ApiResponse(200, $response);
         } catch (InvalidRequest $e) {
             return new ApiResponse($e->status, ['error' => $e->getMessage()]);
-        } catch (ChapterNotAvailable) {
-            return new ApiResponse(501, ['error' => 'Chapter not available yet']);
         } catch (\Throwable $e) {
             ($this->logger)(sprintf('%s: %s in %s:%d', $e::class, $e->getMessage(), $e->getFile(), $e->getLine()));
 

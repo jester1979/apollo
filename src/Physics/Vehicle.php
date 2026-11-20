@@ -17,6 +17,13 @@ final class Vehicle
         public float $pitch = 0.0,
         /** Drag coefficient times reference area in m^2: drag = 1/2 * rho * v^2 * dragArea. 0 = no drag. */
         public readonly float $dragArea = 0.0,
+        /** Lift divided by drag (about 0.3 for the command module at its trim angle). 0 = no lift. */
+        public readonly float $liftToDrag = 0.0,
+        /**
+         * Bank angle in radians: the roll about the velocity relative to the air. The lift points up at 0,
+         * sideways at pi/2 and down at pi; in the 2D plane only its cosine counts.
+         */
+        public float $bank = 0.0,
     ) {
     }
 

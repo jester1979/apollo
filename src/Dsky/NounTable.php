@@ -80,6 +80,10 @@ final readonly class NounTable
         $velocity = new NounComponent(Unit::FeetPerSecond, Format::Whole);
         $burnVelocity = new NounComponent(Unit::FeetPerSecond, Format::Decimal1);
         $checklist = new NounComponent(Unit::None, Format::Whole);
+        $degrees = new NounComponent(Unit::Degrees, Format::Decimal2);
+        $nauticalMiles = new NounComponent(Unit::NauticalMiles, Format::Decimal1);
+        $drag = new NounComponent(Unit::G, Format::Decimal2);
+        $entryVelocity = new NounComponent(Unit::FeetPerSecond, Format::Whole);
 
         return new self(
             // 09: alarm codes, octal only for each.
@@ -90,6 +94,27 @@ final readonly class NounTable
             new Noun(40, new NounComponent(Unit::Seconds, Format::MinutesSeconds), $burnVelocity, $burnVelocity),
             // 62: inertial velocity magnitude (VI), altitude rate change (HDOT), altitude above pad radius (H).
             new Noun(62, $velocity, $velocity, new NounComponent(Unit::NauticalMiles, Format::Decimal1)),
+            // 60: GMAX (XXX.XX g), VPRED (XXXXX. ft/s), GAMMA EI (XXX.XX deg).
+            new Noun(60, $drag, $entryVelocity, $degrees),
+            // 63: RTGO to splash (XXXX.X nm), predicted inertial velocity VIO (XXXXX. ft/s), TFE (XXBXX min/sec).
+            new Noun(63, $nauticalMiles, $entryVelocity, new NounComponent(Unit::Seconds, Format::MinutesSeconds)),
+            // 64: drag acceleration (XXX.XX g), inertial velocity VI (XXXXX. ft/s), range to splash (XXXX.X nm).
+            new Noun(64, $drag, $entryVelocity, $nauticalMiles),
+            // 65: sampled AGC time: hours 00XXX., minutes 000XX., seconds 0XX.XX.
+            new Noun(
+                65,
+                new NounComponent(Unit::Seconds, Format::Hours),
+                new NounComponent(Unit::Seconds, Format::Minutes),
+                new NounComponent(Unit::Seconds, Format::Seconds),
+            ),
+            // 66: command bank angle BETA (XXX.XX deg), cross range error, down range error (XXXX.X nm).
+            new Noun(66, $degrees, $nauticalMiles, $nauticalMiles),
+            // 67: range to target (XXXX.X nm), present latitude, present longitude (XXX.XX deg).
+            new Noun(67, $nauticalMiles, $degrees, $degrees),
+            // 69: BETA (XXX.XX deg), DL (XXX.XX g), VL (XXXXX. ft/s).
+            new Noun(69, $degrees, $drag, $entryVelocity),
+            // 74: command bank angle BETA (XXX.XX deg), inertial velocity VI (XXXXX. ft/s), drag acceleration (XXX.XX g).
+            new Noun(74, $degrees, $entryVelocity, $drag),
         );
     }
 }
